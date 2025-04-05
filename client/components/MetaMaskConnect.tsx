@@ -21,6 +21,8 @@ export const MetaMaskConnect: React.FC<MetaMaskConnectProps> = ({
   const [accountAddress, setAccountAddress] = useState<string | undefined>(
     undefined
   );
+  const [balance, setBalance] = useState<string>("0");
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState<boolean>(false);
 
   useEffect(() => {
     // Check localStorage for existing connection
@@ -45,6 +47,26 @@ export const MetaMaskConnect: React.FC<MetaMaskConnectProps> = ({
       }
     };
   }, []);
+
+  useEffect(() => {
+    if (isConnected && accountAddress) {
+      checkEduTokenBalance();
+    }
+  }, [isConnected, accountAddress]);
+
+  const checkEduTokenBalance = async () => {
+    if (!window.ethereum || !accountAddress) return;
+    
+    try {
+      // For the native EDU token on Open Campus Codex
+      const web3 = new Web3(window.ethereum);
+      const balance = await web3.eth.getBalance(accountAddress);
+      const eduBalance = web3.utils.fromWei(balance, 'ether');
+      setBalance(parseFloat(eduBalance).toFixed(4));
+    } catch (error) {
+      console.error("Error fetching EDU balance:", error);
+    }
+  };
 
   const checkConnection = async (storedAddress: string) => {
     if (typeof window.ethereum !== "undefined") {
@@ -211,12 +233,77 @@ export const MetaMaskConnect: React.FC<MetaMaskConnectProps> = ({
     }
   };
 
+  const payWithEduToken = async (amount: string) => {
+    if (!window.ethereum || !accountAddress) {
+      toast({
+        variant: "destructive",
+        title: "Wallet Error",
+        description: "Please connect your wallet first",
+      });
+      return false;
+    }
+
+    try {
+      const web3 = new Web3(window.ethereum);
+      const weiAmount = web3.utils.toWei(amount, 'ether');
+      
+      // Send transaction to the contract address
+      const contractAddress = "0xYourContractAddressHere"; // Replace with actual contract address
+      
+      const tx = await window.ethereum.request({
+        method: 'eth_sendTransaction',
+        params: [
+          {
+            from: accountAddress,
+            to: contractAddress,
+            value: web3.utils.numberToHex(weiAmount),
+            data: web3.utils.toHex('generatePathWithAI'), // Function signature
+          },
+        ],
+      });
+
+      toast({
+        title: "Payment Successful",
+        description: `Transaction hash: ${tx.slice(0, 10)}...`,
+      });
+      
+      // Update balance after payment
+      await checkEduTokenBalance();
+      
+      return true;
+    } catch (error: any) {
+      console.error("Payment failed:", error);
+      toast({
+        variant: "destructive",
+        title: "Payment Failed",
+        description: error.message || "Failed to complete payment",
+      });
+      return false;
+    }
+  };
+
+  // Expose the payment function globally
+  if (typeof window !== "undefined") {
+    window.payWithEduToken = payWithEduToken;
+  }
+
   if (isConnected && accountAddress) {
     return (
-      <div className="text-center text-xl">
-        <h1>
-          Connected to wallet address: <strong>{accountAddress}</strong>
-        </h1>
+      <div className="flex flex-col items-center space-y-2">
+        <div className="text-sm">
+          <span className="font-medium">{balance} EDU</span>
+        </div>
+        <div className="text-xs truncate max-w-[150px]">
+          {accountAddress.slice(0, 6)}...{accountAddress.slice(-4)}
+        </div>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={() => handleDisconnect()}
+          className="text-xs"
+        >
+          Disconnect
+        </Button>
       </div>
     );
   }
