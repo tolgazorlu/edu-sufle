@@ -98,3 +98,41 @@ npx hardhat run scripts/deploy-sufle.ts --network <your-network>
 ## License
 
 This project is licensed under the MIT License - see the LICENSE.md file for details.
+
+## Survey Feature
+
+Sufle now includes a user survey feature that collects information about new users' learning preferences. Here's how it works:
+
+1. When a user logs in for the first time, they're redirected to the survey page
+2. After completing the survey, users are directed to the dashboard
+3. Returning users who've already completed the survey go directly to the dashboard
+
+### Implementation Details
+
+- Survey completion status is stored on the blockchain through the SufleTaskManager contract
+- The frontend checks this status to determine whether to show the survey or dashboard
+- Survey responses are used to personalize the user experience
+
+### Technical Components
+
+- **Smart Contract**: Added survey tracking to SufleTaskManager.sol
+- **API Endpoints**: 
+  - `/api/survey/submit` - Records survey completion on the blockchain
+  - `/api/survey/status` - Checks if a user has completed the survey
+- **Frontend Pages**:
+  - `/survey` - Collects user preferences
+  - `/redirect` - Handles authentication and survey redirection
+  - `/dashboard` - Personalized user dashboard
+
+### Environment Setup
+
+Required environment variables in `.env.local`:
+```
+RPC_URL=<blockchain-rpc-url>
+TASK_MANAGER_CONTRACT_ADDRESS=<contract-address>
+PRIVATE_KEY=<contract-owner-private-key>
+```
+
+## Other Documentation 
+
+...

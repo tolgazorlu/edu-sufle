@@ -37,6 +37,9 @@ contract SufleTaskManager is Ownable {
     // Mapping from roadmap ID to task ID to task data
     mapping(uint256 => mapping(uint256 => Task)) private _roadmapTasks;
     
+    // Mapping to track if a user has completed the survey
+    mapping(address => bool) private _userSurveyCompleted;
+    
     // Current roadmap ID counter
     uint256 private _roadmapIdCounter;
     
@@ -47,6 +50,7 @@ contract SufleTaskManager is Ownable {
     event PostShared(address indexed user, uint256 roadmapId, uint256 taskId, uint256 postId);
     event LikesUpdated(uint256 postId, uint256 likes);
     event RewardClaimed(address indexed user, uint256 roadmapId, uint256 taskId);
+    event SurveyCompleted(address indexed user);
     
     constructor(address tokenAddress) Ownable(msg.sender) {
         _token = SufleToken(tokenAddress);
@@ -172,6 +176,24 @@ contract SufleTaskManager is Ownable {
         task.rewarded = true;
         
         emit RewardClaimed(user, roadmapId, taskId);
+    }
+    
+    /**
+     * @dev Sets the survey completion status for a user
+     * @param user User address
+     */
+    function completeSurvey(address user) external onlyOwner {
+        _userSurveyCompleted[user] = true;
+        emit SurveyCompleted(user);
+    }
+    
+    /**
+     * @dev Checks if a user has completed the survey
+     * @param user User address
+     * @return bool True if the user has completed the survey
+     */
+    function hasSurveyCompleted(address user) external view returns (bool) {
+        return _userSurveyCompleted[user];
     }
     
     /**
