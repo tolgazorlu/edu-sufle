@@ -11,7 +11,11 @@ const LoginButton = () => {
     });
   };
 
-  return <OCButton  onClick={handleLogin}>Connect OCID</OCButton>;
+  return (
+    <OCButton className="z-50" onClick={handleLogin}>
+      Connect OCID
+    </OCButton>
+  );
 };
 
 export default LoginButton;

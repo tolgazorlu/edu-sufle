@@ -5,10 +5,9 @@ import OCIDProvider from "../components/OCIDProvider";
 
 const inter = Inter({ subsets: ["latin"] });
 
-export const metadata = {
+export const metadata: Metadata = {
   title: "Sufle | Education Partner",
-  description:
-    "A unique education path generator for learners.",
+  description: "A unique education path generator for learners.",
 };
 
 export default function RootLayout({
@@ -17,8 +16,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={inter.className}>
+    <html lang="en" className="scroll-smooth">
+      <body className={`${inter.className} `}>
         <OCIDProvider>{children}</OCIDProvider>
       </body>
     </html>
