@@ -15,6 +15,46 @@ import Image from "next/image";
 import { useOCAuth } from "@opencampus/ocid-connect-js";
 import LoginButton from "@/components/LoginButton";
 import Link from "next/link";
+import { HoverEffect } from "@/components/ui/card-hover-effect";
+
+const SECTION = [
+  {
+    icon: <Brain className="w-6 h-6" />,
+    title: "AI-Powered Roadmaps",
+    description:
+      "Generate personalized learning paths tailored to your goals and interests using advanced AI technology.",
+  },
+  {
+    icon: <Trophy className="w-6 h-6" />,
+    title: "Gamified Learning",
+    description:
+      "Complete tasks, earn rewards, and track your progress in an engaging, game-like educational environment.",
+  },
+  {
+    icon: <Layers className="w-6 h-6" />,
+    title: "Blockchain Rewards",
+    description:
+      "Earn EduTokens for completing tasks and receiving community validation on your learning journey.",
+  },
+  {
+    icon: <LineChart className="w-6 h-6" />,
+    title: "Progress Tracking",
+    description:
+      "Monitor your educational growth with detailed analytics and blockchain-verified achievements.",
+  },
+  {
+    icon: <Sparkles className="w-6 h-6" />,
+    title: "Personalized Tasks",
+    description:
+      "Receive custom-tailored assignments that match your learning style and educational objectives.",
+  },
+  {
+    icon: <ArrowRight className="w-6 h-6" />,
+    title: "Decentralized Knowledge",
+    description:
+      "Participate in a community-driven ecosystem that values and rewards knowledge sharing.",
+  },
+];
 
 export default function LandingPage() {
   const { authState } = useOCAuth();
@@ -33,14 +73,14 @@ export default function LandingPage() {
         <div
           className="absolute bottom-1/4 right-1/3 w-80 h-80 bg-blue-500/20 rounded-full blur-3xl animate-pulse"
           style={{ animationDelay: "1s" }}
-        ></div>
+        />
         <div
           className="absolute top-1/3 right-1/4 w-64 h-64 bg-teal-500/20 rounded-full blur-3xl animate-pulse"
           style={{ animationDelay: "2s" }}
-        ></div>
+        />
 
         {/* Grid pattern overlay */}
-        <div className="absolute inset-0 bg-[url('/placeholder.svg?height=1000&width=1000')] bg-repeat opacity-5"></div>
+        <div className="absolute inset-0 bg-[url('/placeholder.svg?height=1000&width=1000')] bg-repeat opacity-5" />
       </div>
 
       {/* Navigation */}
@@ -141,11 +181,11 @@ export default function LandingPage() {
             <div className="relative z-10 bg-slate-900/80 backdrop-blur-sm border border-purple-500/20 rounded-2xl p-6 shadow-2xl">
               <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-500 to-blue-500 rounded-2xl blur opacity-20"></div>
               <Image
-                src="/placeholder.svg?height=600&width=800"
+                src="/sufle-bg-1.jpg"
                 width={800}
                 height={600}
                 alt="edu Sufle Dashboard Preview"
-                className="rounded-lg w-full h-auto"
+                className="rounded-lg object-cover w-full h-auto"
               />
               <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-t from-slate-950 to-transparent opacity-60 rounded-2xl"></div>
               <div className="absolute bottom-6 left-6 right-6 bg-slate-900/90 backdrop-blur-sm border border-purple-500/30 rounded-lg p-4">
@@ -188,8 +228,7 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {[
+          {/* {[
               {
                 icon: <Brain className="w-6 h-6" />,
                 title: "AI-Powered Roadmaps",
@@ -237,8 +276,8 @@ export default function LandingPage() {
                 <h3 className="text-xl font-bold mb-2">{feature.title}</h3>
                 <p className="text-slate-300">{feature.description}</p>
               </div>
-            ))}
-          </div>
+            ))} */}
+          <HoverEffect className="" items={SECTION} />
         </div>
       </section>
 
@@ -264,19 +303,19 @@ export default function LandingPage() {
                   title: "Ask Questions & Get Guidance",
                   description:
                     "Spend EduTokens to ask questions to Sufle AI and receive personalized guidance on your learning journey.",
-                  image: "/placeholder.svg?height=300&width=500",
+                  image: "/sufle-bg-2.jpg",
                 },
                 {
                   title: "Complete Tasks & Share Progress",
                   description:
                     "Work through your personalized tasks and share your progress with the community through posts.",
-                  image: "/placeholder.svg?height=300&width=500",
+                  image: "/sufle-bg-3.jpg",
                 },
                 {
                   title: "Earn Rewards & Recognition",
                   description:
                     "Gain likes on your progress posts to earn back EduTokens and receive recognition for your achievements.",
-                  image: "/placeholder.svg?height=300&width=500",
+                  image: "/sufle-bg-1.jpg",
                 },
               ].map((step, index) => (
                 <div
