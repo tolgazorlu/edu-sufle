@@ -17,7 +17,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="scroll-smooth">
-      <body className={`${inter.className} dark `}>
+      <body className={`${inter.className} light `}>
         <OCIDProvider>{children}</OCIDProvider>
       </body>
     </html>

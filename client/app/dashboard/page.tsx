@@ -2,8 +2,6 @@
 
 import { useState } from "react";
 import { AppSidebar } from "@/components/app-sidebar"
-import { DataTable } from "@/components/data-table"
-import { SectionCards } from "@/components/section-cards"
 import { SiteHeader } from "@/components/site-header"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
@@ -11,12 +9,10 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { MetaMaskConnect } from "@/components/MetaMaskConnect"
-import { generatePathWithAI } from "@/lib/contractUtils"
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import Web3 from "web3"
-
-import data from "./data.json"
+import SufleABI from "@/constants/abis/Sufle.json"
+import { MetaMaskConnect } from "@/components/MetaMaskConnect";
 
 interface Task {
   title: string;
@@ -47,6 +43,7 @@ export default function Page() {
     transactionHash: null
   });
   const [showGeneratedPath, setShowGeneratedPath] = useState(false);
+  const [accountBalance, setAccountBalance] = useState("0");
   const EDU_TOKEN_PRICE = "0.01";
 
   const handleConnect = (address: string) => {
@@ -55,6 +52,11 @@ export default function Page() {
 
   const handleDisconnect = () => {
     setConnectedAddress("");
+    setAccountBalance("0");
+  };
+  
+  const handleBalanceUpdate = (balance: string) => {
+    setAccountBalance(balance);
   };
   
   const handleGeneratePath = async () => {
@@ -63,10 +65,35 @@ export default function Page() {
       return;
     }
     
+    if (!connectedAddress) {
+      toast.error("Please connect your wallet first");
+      return;
+    }
+    
     setLoading(true);
     
     try {
-      // Call the GenAI API endpoint directly
+      const web3 = new Web3(window.ethereum);
+      
+      await window.ethereum.request({ method: "eth_requestAccounts" });
+      const accounts = await web3.eth.getAccounts();
+      
+     
+      const contractAddress = "0xe7f1725e7734ce288f8367e1bb143e90bb3f0512";
+      const contractABI = SufleABI;
+      
+      const eduTokenContract = new web3.eth.Contract(contractABI, contractAddress);
+      
+      const transaction = await eduTokenContract.methods
+        .generatePathWithDescription(pathDescription)
+        .send({
+          from: accounts[0],
+          value: web3.utils.toWei(EDU_TOKEN_PRICE, "ether"),
+          gas: "3000000"
+        });
+      
+      console.log("Transaction successful:", transaction);
+      
       const response = await fetch('/api/genai', {
         method: 'POST',
         headers: {
@@ -84,33 +111,25 @@ export default function Page() {
       const data = await response.json();
       const generatedContent = data.result;
       
-      // Parse the content if it's in JSON format
       let pathData;
       try {
         let textContent;
         
-        // Try to extract the text content from different possible response structures
         if (generatedContent.candidates && generatedContent.candidates[0]?.content?.parts) {
-          // If response format is with candidates structure
           textContent = generatedContent.candidates[0].content.parts[0].text;
         } else if (generatedContent.text) {
-          // If response format has a direct text property
           textContent = generatedContent.text;
         } else if (typeof generatedContent === 'string') {
-          // If response is already a string
           textContent = generatedContent;
         } else {
-          // Fallback to stringify the whole response
           textContent = JSON.stringify(generatedContent);
         }
         
-        // Find JSON in the text (helps when AI wraps the JSON in markdown or explanations)
         const jsonMatch = textContent.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
           textContent = jsonMatch[0];
         }
         
-        // Parse the JSON
         pathData = JSON.parse(textContent);
       } catch (error) {
         console.error("Error parsing AI response:", error);
@@ -121,31 +140,25 @@ export default function Page() {
         };
       }
       
-      // Set generated path info
       setGeneratedPathInfo({
         title: pathData.title || `AI Generated Path (${new Date().toLocaleDateString()})`,
         description: pathData.description || pathDescription,
         taskCount: pathData.tasks?.length || 0,
         tasks: pathData.tasks || [],
-        transactionHash: null // No transaction hash as no token was used
+        transactionHash: transaction.transactionHash 
       });
       
-      // Close the path dialog
       setPathDialog(false);
-      
-      // Show generated path on dashboard instead of modal
       setShowGeneratedPath(true);
-      
-      // Reset path description
       setPathDescription("");
-      
-      // Scroll to the generated path
       setTimeout(() => {
         const pathElement = document.getElementById('generated-path');
         if (pathElement) {
           pathElement.scrollIntoView({ behavior: 'smooth' });
         }
       }, 100);
+      
+      toast.success("Path generated successfully!");
       
     } catch (error: any) {
       console.error("Error generating path:", error);
@@ -157,7 +170,6 @@ export default function Page() {
   
   const handleViewOnExplorer = () => {
     if (generatedPathInfo.transactionHash) {
-      // Open explorer link in new tab
       window.open(`https://opencampus-codex.blockscout.com/tx/${generatedPathInfo.transactionHash}`, '_blank');
     }
   };
@@ -169,13 +181,88 @@ export default function Page() {
         <SiteHeader />
         <div className="flex flex-1 flex-col p-4 md:p-6">
           {/* Dashboard Header with Connect Button */}
-          {/* <div className="flex justify-between items-center mb-4">
+          <div className="flex justify-between items-center mb-4">
             <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
-            <MetaMaskConnect 
+            <MetaMaskConnect
               onConnect={handleConnect}
               onDisconnect={handleDisconnect}
+              onBalanceUpdate={handleBalanceUpdate}
             />
-          </div> */}
+          </div>
+
+          {/* Account Information Card - Only shown when connected */}
+          {connectedAddress && (
+            <div className="mb-6">
+              <Card className="border-none overflow-hidden bg-gradient-to-r from-teal-50 to-emerald-50">
+                <CardContent className="p-6">
+                  <div className="flex flex-col md:flex-row justify-between items-center">
+                    <div>
+                      <div className="text-sm text-teal-600 font-medium mb-1">Wallet Connected</div>
+                      <h2 className="text-xl font-bold text-teal-900 mb-2 flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-teal-600" viewBox="0 0 20 20" fill="currentColor">
+                          <path d="M2 10a8 8 0 018-8v8h8a8 8 0 11-16 0z" />
+                          <path d="M12 2.252A8.014 8.014 0 0117.748 8H12V2.252z" />
+                        </svg>
+                        Open Campus Account
+                      </h2>
+                      <div className="flex items-center space-x-2 mb-1">
+                        <span className="font-medium text-teal-800">Address:</span>
+                        <span className="text-teal-700 font-mono">
+                          {connectedAddress.slice(0, 6)}...{connectedAddress.slice(-4)}
+                        </span>
+                        <button 
+                          onClick={() => {navigator.clipboard.writeText(connectedAddress); toast.success("Address copied to clipboard")}}
+                          className="text-teal-600 hover:text-teal-800"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" />
+                            <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z" />
+                          </svg>
+                        </button>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <span className="font-medium text-teal-800">Network:</span>
+                        <span className="bg-teal-100 text-teal-800 text-xs px-2.5 py-1 rounded-full flex items-center">
+                          <span className="h-2 w-2 bg-teal-500 rounded-full mr-1"></span>
+                          Open Campus Codex
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div className="mt-4 md:mt-0 flex flex-col items-center md:items-end">
+                      <div className="text-sm text-teal-600 font-medium mb-1">EDU Balance</div>
+                      <div className="text-3xl font-bold text-teal-800 mb-1">{accountBalance} <span className="text-sm">EDU</span></div>
+                      <div className="flex space-x-2 mt-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          className="border-teal-200 text-teal-700 hover:bg-teal-50 hover:text-teal-800 text-xs"
+                          onClick={() => window.open("https://opencampus-codex.blockscout.com/address/" + connectedAddress, "_blank")}
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z" />
+                            <path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z" />
+                          </svg>
+                          Explorer
+                        </Button>
+                        <Button 
+                          size="sm"
+                          className="bg-teal-600 hover:bg-teal-700 text-xs"
+                          onClick={() => window.open("https://www.hackquest.io/faucets/656476", "_blank")}
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1z" clipRule="evenodd" />
+                            <path d="M12 4a1 1 0 100 2h4a1 1 0 100-2h-4zM12 14a1 1 0 100 2h4a1 1 0 100-2h-4zM2 10a1 1 0 011-1h12a1 1 0 110 2H3a1 1 0 01-1-1z" />
+                          </svg>
+                          Get EDU Tokens
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
           
           {/* User Profile Card */}
           <div className="mb-6">
@@ -300,6 +387,17 @@ export default function Page() {
                 <div className="bg-gradient-to-r from-blue-600 to-indigo-600 py-6 px-8">
                   <h2 className="text-2xl font-bold text-white">{generatedPathInfo.title}</h2>
                   <p className="text-blue-100 mt-2 max-w-3xl">{generatedPathInfo.description}</p>
+                  {generatedPathInfo.transactionHash && (
+                    <div className="flex items-center mt-3 bg-white/10 rounded-md px-3 py-2 text-sm text-blue-50">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+                      </svg>
+                      <span className="mr-2">Generated with Edu Token Payment</span>
+                      <span className="overflow-hidden text-ellipsis whitespace-nowrap max-w-[200px] lg:max-w-md">
+                        Tx: {generatedPathInfo.transactionHash.substring(0, 8)}...{generatedPathInfo.transactionHash.substring(generatedPathInfo.transactionHash.length - 8)}
+                      </span>
+                    </div>
+                  )}
                 </div>
                 
                 <CardContent className="p-8">
@@ -399,6 +497,19 @@ export default function Page() {
                       Export Path
                     </Button>
                     <div className="flex gap-2">
+                      {generatedPathInfo.transactionHash && (
+                        <Button
+                          variant="outline"
+                          className="border-blue-200 text-blue-700 hover:bg-blue-50 hover:text-blue-800"
+                          onClick={handleViewOnExplorer}
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z" />
+                            <path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z" />
+                          </svg>
+                          View Transaction
+                        </Button>
+                      )}
                       <Button
                         variant="outline"
                         className="border-red-200 text-red-700 hover:bg-red-50 hover:text-red-800"

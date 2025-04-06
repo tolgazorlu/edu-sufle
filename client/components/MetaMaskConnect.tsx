@@ -7,6 +7,7 @@ import { toast } from "@/components/ui/use-toast";
 interface MetaMaskConnectProps {
   onConnect?: (address: string) => void;
   onDisconnect?: () => void;
+  onBalanceUpdate?: (balance: string) => void;
   className?: string;
 }
 
@@ -15,6 +16,7 @@ const OPEN_CAMPUS_CHAIN_ID = "0xa045c";
 export const MetaMaskConnect: React.FC<MetaMaskConnectProps> = ({
   onConnect,
   onDisconnect,
+  onBalanceUpdate,
   className = "bg-teal-400 hover:bg-teal-700 text-black font-bold py-2 px-4 rounded-md mb-4",
 }) => {
   const [isConnected, setIsConnected] = useState<boolean>(false);
@@ -62,7 +64,13 @@ export const MetaMaskConnect: React.FC<MetaMaskConnectProps> = ({
       const web3 = new Web3(window.ethereum);
       const balance = await web3.eth.getBalance(accountAddress);
       const eduBalance = web3.utils.fromWei(balance, 'ether');
-      setBalance(parseFloat(eduBalance).toFixed(4));
+      const formattedBalance = parseFloat(eduBalance).toFixed(4);
+      setBalance(formattedBalance);
+      
+      // Call the onBalanceUpdate prop if provided
+      if (onBalanceUpdate) {
+        onBalanceUpdate(formattedBalance);
+      }
     } catch (error) {
       console.error("Error fetching EDU balance:", error);
     }
@@ -247,6 +255,22 @@ export const MetaMaskConnect: React.FC<MetaMaskConnectProps> = ({
       const web3 = new Web3(window.ethereum);
       const weiAmount = web3.utils.toWei(amount, 'ether');
       
+      // Check current gas price
+      const gasPrice = await web3.eth.getGasPrice();
+      const gasPriceGwei = web3.utils.fromWei(gasPrice, 'gwei');
+      
+      // Set a threshold for "high" gas fees (e.g., 50 Gwei)
+      const highGasThreshold = 50;
+      
+      if (parseFloat(gasPriceGwei) > highGasThreshold) {
+        toast({
+          variant: "destructive",
+          title: "Transaction Stopped",
+          description: "This transaction would have cost you extra fees, so we stopped it. Your money is still in your wallet.",
+        });
+        return false;
+      }
+      
       // Send transaction to the contract address
       const contractAddress = "0xYourContractAddressHere"; // Replace with actual contract address
       
@@ -289,12 +313,14 @@ export const MetaMaskConnect: React.FC<MetaMaskConnectProps> = ({
 
   if (isConnected && accountAddress) {
     return (
-      <div className="flex flex-col items-center space-y-2">
-        <div className="text-sm">
-          <span className="font-medium">{balance} EDU</span>
-        </div>
-        <div className="text-xs truncate max-w-[150px]">
-          {accountAddress.slice(0, 6)}...{accountAddress.slice(-4)}
+      <div className="flex items-center space-x-2">
+        <div className="flex flex-col items-end">
+            <div className="text-sm">
+              <span className="font-medium">{balance} EDU</span>
+            </div>
+            <div className="text-xs truncate max-w-[150px] ">
+              {accountAddress.slice(0, 6)}...{accountAddress.slice(-4)}
+            </div>
         </div>
         <Button 
           variant="outline" 
@@ -309,7 +335,7 @@ export const MetaMaskConnect: React.FC<MetaMaskConnectProps> = ({
   }
 
   return (
-    <Button className={className} onClick={connectWallet} variant="link">
+    <Button size="sm" onClick={connectWallet}>
       Connect with MetaMask
     </Button>
   );
