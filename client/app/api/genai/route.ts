@@ -6,7 +6,7 @@ export async function POST(request: Request) {
     const { surveyData } = await request.json();
     
     const pathGeneratorPrompt = `
-      Based on the following user survey data:
+      Based on the following user input:
       ${JSON.stringify(surveyData)}
       
       Create a personalized learning path with the following information:
@@ -38,15 +38,14 @@ export async function POST(request: Request) {
       }
     `;
 
-        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
+    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
 
-
-        const response = await ai.models.generateContent({
-            model: "gemini-2.0-flash",
-            contents: pathGeneratorPrompt,
-        });
-        
-        return NextResponse.json({ result: response });
+    const response = await ai.models.generateContent({
+      model: "gemini-2.0-flash",
+      contents: pathGeneratorPrompt,
+    });
+    
+    return NextResponse.json({ result: response });
   } catch (error) {
     console.error("Error generating content:", error);
     return NextResponse.json(

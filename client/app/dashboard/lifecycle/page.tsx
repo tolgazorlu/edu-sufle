@@ -21,11 +21,34 @@ import {
 import { createTask, createPath } from "@/lib/contractUtils";
 import Web3 from "web3";
 
+interface SurveyDataType {
+  lifeGoals: string;
+  interests: string;
+  motivations: string;
+  occupation: string;
+  timeCommitment: string;
+  previousExperience: string;
+}
+
+interface Task {
+  title: string;
+  description: string;
+  priority: string;
+  status: string;
+  tags: string;
+}
+
+interface GeneratedPath {
+  title: string;
+  description: string;
+  tasks: Task[];
+}
+
 export default function LifeCyclePage() {
   const [loading, setLoading] = useState(false);
-  const [generatedPath, setGeneratedPath] = useState(null);
+  const [generatedPath, setGeneratedPath] = useState<GeneratedPath | null>(null);
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
-  const [surveyData, setSurveyData] = useState({
+  const [surveyData, setSurveyData] = useState<SurveyDataType>({
     lifeGoals: "",
     interests: "",
     motivations: "",
@@ -36,7 +59,7 @@ export default function LifeCyclePage() {
   const [connectedAddress, setConnectedAddress] = useState("");
   const EDU_TOKEN_PRICE = "0.01";
 
-  const handleConnect = (address) => {
+  const handleConnect = (address: string) => {
     setConnectedAddress(address);
   };
 
@@ -44,7 +67,7 @@ export default function LifeCyclePage() {
     setConnectedAddress("");
   };
 
-  const handleChange = (e) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { id, value } = e.target;
     setSurveyData(prev => ({
       ...prev,
@@ -52,7 +75,7 @@ export default function LifeCyclePage() {
     }));
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!connectedAddress) {
@@ -72,12 +95,17 @@ export default function LifeCyclePage() {
     setLoading(true);
     
     try {
+      console.log("Starting payment process...");
+      
       // Payment reference to the MetaMaskConnect component
       const paymentSuccess = await window.payWithEduToken?.(EDU_TOKEN_PRICE);
       
       if (!paymentSuccess) {
         throw new Error("Payment failed or was cancelled");
       }
+      
+      console.log("Payment successful, generating learning path...");
+      console.log("Survey data being sent:", surveyData);
       
       // After successful payment, generate the path
       const response = await fetch("/api/genai", {
@@ -89,6 +117,7 @@ export default function LifeCyclePage() {
       });
 
       const data = await response.json();
+      console.log("Received response from GenAI:", data);
       
       if (!response.ok) {
         throw new Error(data.error || "Failed to generate learning path");
@@ -96,9 +125,9 @@ export default function LifeCyclePage() {
       
       setGeneratedPath(data.result);
       toast.success("Learning path generated successfully!");
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Error:", error);
-      toast.error(error.message || "Failed to generate learning path. Please try again.");
+      toast.error(error instanceof Error ? error.message : "Failed to generate learning path. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -110,13 +139,20 @@ export default function LifeCyclePage() {
       return;
     }
     
+    if (!generatedPath) {
+      toast.error("No learning path to save");
+      return;
+    }
+    
     try {
       setLoading(true);
+      console.log("Saving path to blockchain...");
       
       // First create all tasks and collect their IDs
       const taskIds: number[] = [];
       
       for (const task of generatedPath.tasks) {
+        console.log("Creating task:", task.title);
         const taskHash = await createTask(
           connectedAddress,
           task.title,
@@ -136,10 +172,12 @@ export default function LifeCyclePage() {
             16
           );
           taskIds.push(taskId);
+          console.log("Task created with ID:", taskId);
         }
       }
       
       if (taskIds.length > 0) {
+        console.log("Creating path with tasks:", taskIds);
         const pathHash = await createPath(
           connectedAddress,
           {
@@ -151,10 +189,11 @@ export default function LifeCyclePage() {
         );
         
         if (pathHash) {
+          console.log("Path created with hash:", pathHash);
           toast.success("Path and tasks saved to blockchain!");
         }
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Error saving to blockchain:", error);
       toast.error("Failed to save path to blockchain");
     } finally {
@@ -267,7 +306,7 @@ export default function LifeCyclePage() {
                         </tr>
                       </thead>
                       <tbody>
-                        {generatedPath.tasks.map((task, index) => (
+                        {generatedPath.tasks.map((task: Task, index: number) => (
                           <tr key={index} className="border-b">
                             <td className="p-2 border">{task.title}</td>
                             <td className="p-2 border">{task.description}</td>
