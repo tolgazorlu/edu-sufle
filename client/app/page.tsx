@@ -86,10 +86,7 @@ export default function LandingPage() {
       {/* Navigation */}
       <nav className="relative z-10 container mx-auto px-4 py-6 flex justify-between items-center">
         <div className="flex items-center gap-2">
-          <div className="relative w-8 h-8 bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg flex items-center justify-center">
-            <Sparkles className="w-5 h-5 text-white" />
-            <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg blur opacity-50"></div>
-          </div>
+          <Image src="/sufle.png" alt="Sufle Logo" width={32} height={32} />
           <span className="text-xl font-bold">Sufle</span>
         </div>
         <div className="hidden md:flex items-center gap-8">
@@ -147,7 +144,7 @@ export default function LandingPage() {
           <div className="space-y-8">
             <div>
               <div className="inline-block px-3 py-1 mb-4 text-xs font-medium bg-purple-900/50 text-purple-300 rounded-full border border-purple-700/50 backdrop-blur-sm">
-                Blockchain-Powered Education
+                Education AI Coach
               </div>
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-purple-200 to-blue-200">
                 Your AI-Guided Learning Journey
@@ -184,7 +181,7 @@ export default function LandingPage() {
                 src="/sufle-bg-1.jpg"
                 width={800}
                 height={600}
-                alt="edu Sufle Dashboard Preview"
+                alt="Sufle Dashboard Preview"
                 className="rounded-lg object-cover w-full h-auto"
               />
               <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-t from-slate-950 to-transparent opacity-60 rounded-2xl"></div>
@@ -223,60 +220,10 @@ export default function LandingPage() {
               Revolutionizing Education with Blockchain
             </h2>
             <p className="text-slate-300 max-w-2xl mx-auto">
-              edu Sufle combines AI-powered learning paths with blockchain
+              Sufle combines AI-powered learning paths with blockchain
               incentives to create a unique educational experience.
             </p>
           </div>
-
-          {/* {[
-              {
-                icon: <Brain className="w-6 h-6" />,
-                title: "AI-Powered Roadmaps",
-                description:
-                  "Generate personalized learning paths tailored to your goals and interests using advanced AI technology.",
-              },
-              {
-                icon: <Trophy className="w-6 h-6" />,
-                title: "Gamified Learning",
-                description:
-                  "Complete tasks, earn rewards, and track your progress in an engaging, game-like educational environment.",
-              },
-              {
-                icon: <Layers className="w-6 h-6" />,
-                title: "Blockchain Rewards",
-                description:
-                  "Earn EduTokens for completing tasks and receiving community validation on your learning journey.",
-              },
-              {
-                icon: <LineChart className="w-6 h-6" />,
-                title: "Progress Tracking",
-                description:
-                  "Monitor your educational growth with detailed analytics and blockchain-verified achievements.",
-              },
-              {
-                icon: <Sparkles className="w-6 h-6" />,
-                title: "Personalized Tasks",
-                description:
-                  "Receive custom-tailored assignments that match your learning style and educational objectives.",
-              },
-              {
-                icon: <ArrowRight className="w-6 h-6" />,
-                title: "Decentralized Knowledge",
-                description:
-                  "Participate in a community-driven ecosystem that values and rewards knowledge sharing.",
-              },
-            ].map((feature, index) => (
-              <div
-                key={index}
-                className="bg-slate-900/50 backdrop-blur-sm border border-purple-500/20 rounded-xl p-6 hover:border-purple-500/40 transition-all hover:shadow-lg hover:shadow-purple-500/10 group"
-              >
-                <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-blue-600 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                  {feature.icon}
-                </div>
-                <h3 className="text-xl font-bold mb-2">{feature.title}</h3>
-                <p className="text-slate-300">{feature.description}</p>
-              </div>
-            ))} */}
           <HoverEffect className="" items={SECTION} />
         </div>
       </section>
@@ -286,7 +233,7 @@ export default function LandingPage() {
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              How edu Sufle Works
+              How Sufle Works
             </h2>
             <p className="text-slate-300 max-w-2xl mx-auto">
               Our token-based economy incentivizes learning and knowledge
@@ -358,7 +305,7 @@ export default function LandingPage() {
       </section>
 
       {/* Technology Stack Section */}
-      <section
+      {/* <section
         id="technology"
         className="relative z-10 bg-slate-950/80 backdrop-blur-md py-24"
       >
@@ -368,7 +315,7 @@ export default function LandingPage() {
               Cutting-Edge Technology Stack
             </h2>
             <p className="text-slate-300 max-w-2xl mx-auto">
-              edu Sufle is built on a robust foundation of blockchain and AI
+              Sufle is built on a robust foundation of blockchain and AI
               technologies.
             </p>
           </div>
@@ -385,7 +332,7 @@ export default function LandingPage() {
                 description: "Gemini API for roadmap generation",
               },
               { name: "Backend", description: "MongoDB, custom APIs" },
-              { name: "Token Economy", description: "SufleToken / EduToken" },
+              { name: "Token Economy", description: "EduToken" },
               { name: "Smart Contracts", description: "SufleTaskManager" },
               {
                 name: "Survey System",
@@ -405,7 +352,7 @@ export default function LandingPage() {
             ))}
           </div>
         </div>
-      </section>
+      </section> */}
 
       {/* CTA Section */}
       <section className="relative z-10 py-24">
@@ -420,7 +367,7 @@ export default function LandingPage() {
                 Start Your Personalized Learning Journey Today
               </h2>
               <p className="text-lg text-slate-300 mb-8">
-                Join edu Sufle and revolutionize the way you learn with
+                Join Sufle and revolutionize the way you learn with
                 AI-powered roadmaps and blockchain rewards.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -450,10 +397,8 @@ export default function LandingPage() {
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="flex items-center gap-2 mb-4 md:mb-0">
-              <div className="relative w-8 h-8 bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg flex items-center justify-center">
-                <Sparkles className="w-5 h-5 text-white" />
-              </div>
-              <span className="text-xl font-bold">edu Sufle</span>
+              <Image src="/sufle.png" alt="Sufle Logo" width={32} height={32} />
+              <span className="text-xl font-bold">Sufle</span>
             </div>
             <div className="flex gap-8 mb-4 md:mb-0">
               <a
@@ -476,7 +421,7 @@ export default function LandingPage() {
               </a>
             </div>
             <div className="text-sm text-slate-400">
-              &copy; {new Date().getFullYear()} edu Sufle. All rights reserved.
+              &copy; {new Date().getFullYear()} Sufle. All rights reserved.
             </div>
           </div>
         </div>

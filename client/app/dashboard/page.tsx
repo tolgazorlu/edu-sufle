@@ -79,17 +79,30 @@ export default function Page() {
       const accounts = await web3.eth.getAccounts();
       
      
-      const contractAddress = "0xe7f1725e7734ce288f8367e1bb143e90bb3f0512";
+      const contractAddress = "0x5ae3C1C707492e9d319953A2c3bE0cb651C38fC8";
       const contractABI = SufleABI;
       
       const eduTokenContract = new web3.eth.Contract(contractABI, contractAddress);
+      
+      // Estimate gas first
+      const gasPrice = await web3.eth.getGasPrice();
+      const estimatedGas = await eduTokenContract.methods
+        .generatePathWithDescription(pathDescription)
+        .estimateGas({
+          from: accounts[0],
+          value: web3.utils.toWei(EDU_TOKEN_PRICE, "ether"),
+        })
+        .catch(() => "500000"); // Fallback if estimation fails
+      
+      console.log("Estimated gas:", estimatedGas);
       
       const transaction = await eduTokenContract.methods
         .generatePathWithDescription(pathDescription)
         .send({
           from: accounts[0],
           value: web3.utils.toWei(EDU_TOKEN_PRICE, "ether"),
-          gas: "3000000"
+          gas: String(estimatedGas),
+          gasPrice: String(gasPrice)
         });
       
       console.log("Transaction successful:", transaction);
