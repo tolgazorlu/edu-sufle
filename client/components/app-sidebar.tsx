@@ -39,23 +39,23 @@ const data = {
   },
   navMain: [
     {
-      title: "Dashboard",
-      url: "/dashboard",
+      title: "App",
+      url: "/app",
       icon: LayoutDashboardIcon,
     },
     {
       title: "My Paths",
-      url: "/dashboard/paths",
+      url: "/app/paths",
       icon: MapIcon,
     },
     {
       title: "Flow",
-      url: "/dashboard/flow",
+      url: "/app/flow",
       icon: FileTextIcon,
     },
     {
       title: "Lifecycle",
-      url: "/dashboard/lifecycle",
+      url: "/app/lifecycle",
       icon: ListIcon,
     },
   ],

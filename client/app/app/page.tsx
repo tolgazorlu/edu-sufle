@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AppSidebar } from "@/components/app-sidebar"
 import { SiteHeader } from "@/components/site-header"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
@@ -15,6 +15,7 @@ import Web3 from "web3"
 import SufleABI from "@/constants/abis/Sufle.json"
 import { MetaMaskConnect } from "@/components/MetaMaskConnect";
 import { createPath, createTask } from '@/lib/contractUtils';
+import { useRouter } from 'next/navigation';
 
 interface Task {
   title: string;
@@ -47,10 +48,38 @@ function AppContent() {
   const [showGeneratedPath, setShowGeneratedPath] = useState(false);
   const [accountBalance, setAccountBalance] = useState("0");
   const EDU_TOKEN_PRICE = "0.01";
+  const router = useRouter();
 
   const handleConnect = (address: string) => {
     setConnectedAddress(address);
   };
+
+  // Check if user has completed a survey
+  useEffect(() => {
+    const checkSurveyStatus = async () => {
+      if (connectedAddress) {
+        try {
+          // Initialize Web3 instance
+          const web3 = new Web3(window.ethereum);
+          const contractAddress = "0xdf57089febbacf7ba0bc227dafbffa9fc08a93fdc68e1e42411a14efcf23656e";
+          const contract = new web3.eth.Contract(SufleABI, contractAddress);
+          
+          // Get user survey count from the contract
+          const surveyCount = await contract.methods.getUserSurveyCount(connectedAddress).call();
+          
+          // If user has no surveys, redirect to lifecycle page
+          if (String(surveyCount) === "0") {
+            toast.info("Please complete the survey to continue");
+            router.push('/app/lifecycle');
+          }
+        } catch (error) {
+          console.error("Error checking survey status:", error);
+        }
+      }
+    };
+    
+    checkSurveyStatus();
+  }, [connectedAddress, router]);
 
   const handleDisconnect = () => {
     setConnectedAddress("");

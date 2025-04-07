@@ -10,6 +10,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
+import Link from "next/link"
 
 export function NavMain({
   items,
@@ -30,7 +31,7 @@ export function NavMain({
               className="min-w-8 bg-primary text-primary-foreground duration-200 ease-linear hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground"
             >
               <PlusCircleIcon />
-              <span>Quick Create</span>
+              <span>Quick Generate</span>
             </SidebarMenuButton>
             <Button
               size="icon"
@@ -45,10 +46,14 @@ export function NavMain({
         <SidebarMenu>
           {items.map((item) => (
             <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton tooltip={item.title}>
-                {item.icon && <item.icon />}
-                <span>{item.title}</span>
-              </SidebarMenuButton>
+              <Link href={item.url} passHref>
+                <SidebarMenuButton tooltip={item.title}>
+                  <div className="flex items-center gap-2">
+                    {item.icon && <item.icon className="w-4 h-4" />}
+                    <span>{item.title}</span>
+                  </div>
+                </SidebarMenuButton>
+              </Link>
             </SidebarMenuItem>
           ))}
         </SidebarMenu>
