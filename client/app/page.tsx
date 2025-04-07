@@ -111,11 +111,11 @@ export default function LandingPage() {
           {mounted && authState.isAuthenticated ? (
             <Button
               onClick={() => {
-                window.location.href = "/dashboard";
+                window.location.href = "/app";
               }}
               className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white"
             >
-              Go to Dashboard
+              Go to App
             </Button>
           ) : (
             <LoginButton />
@@ -125,7 +125,7 @@ export default function LandingPage() {
           {mounted && authState.isAuthenticated ? (
             <Button
               onClick={() => {
-                window.location.href = "/dashboard";
+                window.location.href = "/app";
               }}
               className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white"
               size="sm"
@@ -159,11 +159,11 @@ export default function LandingPage() {
               {mounted && authState.isAuthenticated ? (
                 <Button
                   onClick={() => {
-                    window.location.href = "/dashboard";
+                    window.location.href = "/app";
                   }}
                   className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white px-8 py-6 h-auto text-lg group"
                 >
-                  Go to Dashboard
+                  Go to App
                   <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </Button>
               ) : (
@@ -374,11 +374,11 @@ export default function LandingPage() {
                 {mounted && authState.isAuthenticated ? (
                   <Button
                     onClick={() => {
-                      window.location.href = "/dashboard";
+                      window.location.href = "/app";
                     }}
                     className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white px-8 py-6 h-auto text-lg"
                   >
-                    Go to Dashboard
+                    Go to App
                   </Button>
                 ) : (
                   <div className="relative">

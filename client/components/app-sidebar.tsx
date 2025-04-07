@@ -11,6 +11,7 @@ import {
   HelpCircleIcon,
   LayoutDashboardIcon,
   ListIcon,
+  MapIcon,
   SearchIcon,
   SettingsIcon,
 } from "lucide-react"
@@ -43,13 +44,18 @@ const data = {
       icon: LayoutDashboardIcon,
     },
     {
+      title: "My Paths",
+      url: "/dashboard/paths",
+      icon: MapIcon,
+    },
+    {
       title: "Flow",
-      url: "/flow",
+      url: "/dashboard/flow",
       icon: FileTextIcon,
     },
     {
       title: "Lifecycle",
-      url: "/lifecycle",
+      url: "/dashboard/lifecycle",
       icon: ListIcon,
     },
   ],

@@ -8,7 +8,7 @@ const RedirectPage = () => {
   const { authState, ocAuth } = useOCAuth();
 
   const loginSuccess = () => {
-    router.push("/dashboard");
+    router.push("/app");
   };
 
   const loginError = () => {
