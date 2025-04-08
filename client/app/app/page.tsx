@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import Web3 from "web3"
 import SufleABI from "@/constants/abis/Sufle.json"
 import { MetaMaskConnect } from "@/components/MetaMaskConnect";
-import { createPath, createTask } from '@/lib/contractUtils';
+import { createPath, createTask, updateTaskStatus } from '@/lib/contractUtils';
 import { useRouter } from 'next/navigation';
 
 interface Task {
@@ -23,6 +23,8 @@ interface Task {
   priority: string;
   status: string;
   tags: string;
+  id?: number | string;
+  _pendingCompletion?: boolean; // Track tasks that are in the process of being completed
 }
 
 interface GeneratedPathInfo {
@@ -67,7 +69,7 @@ function AppContent() {
         try {
           // Initialize Web3 instance
           const web3 = new Web3(window.ethereum);
-          const contractAddress = "0xfC9337a66bB4704f867091d439883b9F3068843E";
+          const contractAddress = "0xABBB62c5801e8f0f1a8b31FFECd36673B760c490";
           const contract = new web3.eth.Contract(SufleABI, contractAddress);
           
           // Get user survey count from the contract
@@ -94,7 +96,7 @@ function AppContent() {
         try {
           console.log("Fetching survey data for address:", connectedAddress);
           const web3 = new Web3(window.ethereum);
-          const contract = new web3.eth.Contract(SufleABI, "0xfC9337a66bB4704f867091d439883b9F3068843E");
+          const contract = new web3.eth.Contract(SufleABI, "0xABBB62c5801e8f0f1a8b31FFECd36673B760c490");
           
           const surveyCount = Number(await contract.methods.getUserSurveyCount(connectedAddress).call());
           console.log("Survey count:", surveyCount);
@@ -356,187 +358,9 @@ function AppContent() {
             />
           </div>
 
-          {/* Account Information Card - Only shown when connected */}
-          {connectedAddress && (
-            <div className="mb-6">
-              <Card className="border-none overflow-hidden bg-gradient-to-r from-teal-50 to-emerald-50">
-                <CardContent className="p-6">
-                  <div className="flex flex-col md:flex-row justify-between items-center">
-                    <div>
-                      <div className="text-sm text-teal-600 font-medium mb-1">Wallet Connected</div>
-                      <h2 className="text-xl font-bold text-teal-900 mb-2 flex items-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-teal-600" viewBox="0 0 20 20" fill="currentColor">
-                          <path d="M2 10a8 8 0 018-8v8h8a8 8 0 11-16 0z" />
-                          <path d="M12 2.252A8.014 8.014 0 0117.748 8H12V2.252z" />
-                        </svg>
-                        Open Campus Account
-                      </h2>
-                      <div className="flex items-center space-x-2 mb-1">
-                        <span className="font-medium text-teal-800">Address:</span>
-                        <span className="text-teal-700 font-mono">
-                          {connectedAddress.slice(0, 6)}...{connectedAddress.slice(-4)}
-                        </span>
-                        <button 
-                          onClick={() => {navigator.clipboard.writeText(connectedAddress); toast.success("Address copied to clipboard")}}
-                          className="text-teal-600 hover:text-teal-800"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                            <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" />
-                            <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z" />
-                          </svg>
-                        </button>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <span className="font-medium text-teal-800">Network:</span>
-                        <span className="bg-teal-100 text-teal-800 text-xs px-2.5 py-1 rounded-full flex items-center">
-                          <span className="h-2 w-2 bg-teal-500 rounded-full mr-1"></span>
-                          Open Campus Codex
-                        </span>
-                      </div>
-                    </div>
-                    
-                    <div className="mt-4 md:mt-0 flex flex-col items-center md:items-end">
-                      <div className="text-sm text-teal-600 font-medium mb-1">EDU Balance</div>
-                      <div className="text-3xl font-bold text-teal-800 mb-1">{accountBalance} <span className="text-sm">EDU</span></div>
-                      <div className="flex space-x-2 mt-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          className="border-teal-200 text-teal-700 hover:bg-teal-50 hover:text-teal-800 text-xs"
-                          onClick={() => window.open("https://opencampus-codex.blockscout.com/address/" + connectedAddress, "_blank")}
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                            <path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z" />
-                            <path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z" />
-                          </svg>
-                          Explorer
-                        </Button>
-                        <Button 
-                          size="sm"
-                          className="bg-teal-600 hover:bg-teal-700 text-xs"
-                          onClick={() => window.open("https://www.hackquest.io/faucets/656476", "_blank")}
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1z" clipRule="evenodd" />
-                            <path d="M12 4a1 1 0 100 2h4a1 1 0 100-2h-4zM12 14a1 1 0 100 2h4a1 1 0 100-2h-4zM2 10a1 1 0 011-1h12a1 1 0 110 2H3a1 1 0 01-1-1z" />
-                          </svg>
-                          Get EDU Tokens
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          )}
-          
-          {/* User Profile Card */}
-          <div className="mb-6">
-            <Card className="shadow-lg overflow-hidden rounded-xl">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <div className="md:col-span-3 p-8">
-                  <div className="flex items-center mb-6">
-                    <div className="bg-indigo-100/50 p-2 rounded-lg mr-3">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-indigo-600" viewBox="0 0 20 20" fill="currentColor">
-                        <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3zM3.31 9.397L5 10.12v4.102a8.969 8.969 0 00-1.05-.174 1 1 0 01-.89-.89 11.115 11.115 0 01.25-3.762zM9.3 16.573A9.026 9.026 0 007 14.935v-3.957l1.818.78a3 3 0 002.364 0l5.508-2.361a11.026 11.026 0 01.25 3.762 1 1 0 01-.89.89 8.968 8.968 0 00-5.35 2.524 1 1 0 01-1.4 0zM6 18a1 1 0 001-1v-2.065a8.935 8.935 0 00-2-.712V17a1 1 0 001 1z" />
-                      </svg>
-                    </div>
-                    <h2 className="text-xl font-bold text-gray-900">Your Learning Profile</h2>
-                  </div>
 
-                  <div className="space-y-8">
-                    {/* Interest Categories */}
-                    <div>
-                      <div className="flex items-center mb-3">
-                        <div className="bg-indigo-100/50 p-1.5 rounded-lg mr-2">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-indigo-600" viewBox="0 0 20 20" fill="currentColor">
-                            <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3zM3.31 9.397L5 10.12v4.102a8.969 8.969 0 00-1.05-.174 1 1 0 01-.89-.89 11.115 11.115 0 01.25-3.762zM9.3 16.573A9.026 9.026 0 007 14.935v-3.957l1.818.78a3 3 0 002.364 0l5.508-2.361a11.026 11.026 0 01.25 3.762 1 1 0 01-.89.89 8.968 8.968 0 00-5.35 2.524 1 1 0 01-1.4 0zM6 18a1 1 0 001-1v-2.065a8.935 8.935 0 00-2-.712V17a1 1 0 001 1z" />
-                          </svg>
-                        </div>
-                        <h3 className="text-gray-700 font-medium">Interest Categories:</h3>
-                      </div>
-                      <div className="flex flex-wrap gap-2 ml-8">
-                        {surveyData?.categories.map((category, index) => (
-                          <span key={index} className="bg-indigo-100/50 text-indigo-700 text-sm px-3 py-1 rounded-full">
-                            {category}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Motivations */}
-                    <div>
-                      <div className="flex items-center mb-3">
-                        <div className="bg-emerald-100/50 p-1.5 rounded-lg mr-2">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-emerald-600" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 1.414L10.586 9H7a1 1 0 100 2h3.586l-1.293 1.293a1 1 0 101.414 1.414l3-3a1 1 0 000-1.414z" clipRule="evenodd" />
-                          </svg>
-                        </div>
-                        <h3 className="text-gray-700 font-medium">Motivations:</h3>
-                      </div>
-                      <div className="flex flex-wrap gap-2 ml-8">
-                        {surveyData?.motivations.map((motivation, index) => (
-                          <span key={index} className="bg-emerald-100/50 text-emerald-700 text-sm px-3 py-1 rounded-full">
-                            {motivation}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                      {/* Occupation */}
-                      <div>
-                        <div className="flex items-center mb-3">
-                          <div className="bg-purple-100/50 p-1.5 rounded-lg mr-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-purple-600" viewBox="0 0 20 20" fill="currentColor">
-                              <path fillRule="evenodd" d="M6 6V5a3 3 0 013-3h2a3 3 0 013 3v1h2a2 2 0 012 2v3.57A22.952 22.952 0 0110 13a22.95 22.95 0 01-8-1.43V8a2 2 0 012-2h2zm2-1a1 1 0 011-1h2a1 1 0 011 1v1H8V5z" />
-                            </svg>
-                          </div>
-                          <h3 className="text-gray-700 font-medium">Occupation:</h3>
-                        </div>
-                        <div className="ml-8">
-                          <span className="bg-purple-100/50 text-purple-700 text-sm px-3 py-1 rounded-full">
-                            {surveyData?.occupation || 'Not specified'}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Life Goal */}
-                      <div>
-                        <div className="flex items-center mb-3">
-                          <div className="bg-blue-100/50 p-1.5 rounded-lg mr-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-blue-600" viewBox="0 0 20 20" fill="currentColor">
-                              <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                            </svg>
-                          </div>
-                          <h3 className="text-gray-700 font-medium">Life Goal:</h3>
-                        </div>
-                        <div className="ml-8">
-                          <p className="text-gray-600">{surveyData?.lifeGoals || 'Not specified'}</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-gradient-to-br from-indigo-600 to-violet-600 p-8 flex flex-col justify-center items-center text-white">
-                  <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mb-4">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
-                  </div>
-                  <h3 className="text-xl font-bold mb-3">Profile Strength</h3>
-                  <div className="w-full bg-white/20 rounded-full h-2.5 mb-2">
-                    <div className="bg-white h-2.5 rounded-full" style={{ width: '85%' }}></div>
-                  </div>
-                  <p className="text-lg font-medium">85% Complete</p>
-                </div>
-              </div>
-            </Card>
-          </div>
-          
-          {/* Product Info Card */}
-          <div className="mb-6">
+{/* Product Info Card with Wallet Information */}
+<div className="mb-6">
             <Card className="shadow-lg overflow-hidden rounded-xl border border-emerald-100">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-0">
                 <div className="md:col-span-2 p-6 md:p-8">
@@ -546,38 +370,77 @@ function AppContent() {
                         <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                       </svg>
                     </div>
-                    <h2 className="text-xl font-bold text-gray-900">Sufle - Your Learning Journey Partner</h2>
+                    <h2 className="text-xl font-bold text-gray-900">Sufle - Your Wallet is connected</h2>
                   </div>
-                  
-                  <p className="text-gray-600 mb-6">
-                    Sufle is a decentralized learning platform that helps you create personalized learning paths using AI. Track your progress, earn rewards, and connect with other learners in the ecosystem.
-                  </p>
-                  
                   <div className="grid grid-cols-2 gap-4 mb-6">
                     <div className="bg-emerald-50 rounded-lg p-4">
-                      <div className="text-emerald-600 font-semibold mb-1">EDU Token Price</div>
-                      <div className="text-2xl font-bold text-emerald-700">0.01 ETH</div>
+                      <div className="text-emerald-600 font-semibold mb-1">Tolga Zorlu</div>
+                      <div className="text-2xl font-bold text-emerald-700">tolgazorlu.edu</div>
                     </div>
                     <div className="bg-emerald-50 rounded-lg p-4">
                       <div className="text-emerald-600 font-semibold mb-1">Network</div>
-                      <div className="text-lg font-semibold text-emerald-700">Open Campus Codex</div>
+                      <div className="text-lg font-semibold text-emerald-700 flex items-center">
+                        <span className="h-2 w-2 bg-emerald-500 rounded-full mr-1"></span>
+                        Open Campus Codex
+                      </div>
                     </div>
                   </div>
                   
+                  {connectedAddress && (
+                    <div className="bg-gradient-to-r from-teal-50 to-emerald-50 p-4 rounded-lg mb-6">
+                      <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
+                        <div>
+                          <div className="text-sm text-teal-600 font-medium mb-1">Wallet Connected</div>
+                          <div className="flex items-center space-x-2 mb-1">
+                            <span className="font-medium text-teal-800">Address:</span>
+                            <span className="text-teal-700 font-mono">
+                              {connectedAddress.slice(0, 6)}...{connectedAddress.slice(-4)}
+                            </span>
+                            <button 
+                              onClick={() => {navigator.clipboard.writeText(connectedAddress); toast.success("Address copied to clipboard")}}
+                              className="text-teal-600 hover:text-teal-800"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" />
+                                <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z" />
+                              </svg>
+                            </button>
+                          </div>
+                        </div>
+                        <div className="mt-2 md:mt-0">
+                          <div className="text-sm text-teal-600 font-medium mb-1">EDU Balance</div>
+                          <div className="text-xl font-bold text-teal-800">{accountBalance} <span className="text-sm">EDU</span></div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
                   <div className="flex flex-wrap gap-2">
-                    <Button variant="outline" className="border-emerald-200 text-emerald-700 hover:bg-emerald-50">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                        <path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z" />
-                        <path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z" />
-                      </svg>
-                      View Contract
-                    </Button>
-                    <Button variant="outline" className="border-emerald-200 text-emerald-700 hover:bg-emerald-50">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                      </svg>
-                      Documentation
-                    </Button>
+                    {connectedAddress && (
+                      <>
+                        <Button 
+                          variant="outline" 
+                          className="border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+                          onClick={() => window.open("https://opencampus-codex.blockscout.com/address/" + connectedAddress, "_blank")}
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z" />
+                            <path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z" />
+                          </svg>
+                          Explorer
+                        </Button>
+                        <Button 
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                          onClick={() => window.open("https://www.hackquest.io/faucets/656476", "_blank")}
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1z" clipRule="evenodd" />
+                            <path d="M12 4a1 1 0 100 2h4a1 1 0 100-2h-4zM12 14a1 1 0 100 2h4a1 1 0 100-2h-4zM2 10a1 1 0 011-1h12a1 1 0 110 2H3a1 1 0 01-1-1z" />
+                          </svg>
+                          Get EDU Tokens
+                        </Button>
+                      </>
+                    )}
                   </div>
                 </div>
                 
@@ -613,6 +476,97 @@ function AppContent() {
               </div>
             </Card>
           </div>
+
+          
+          {/* User Profile Card - Matching Design */}
+          <div className="mb-6">
+            <Card className="shadow-sm hover:shadow-md transition-shadow border border-indigo-100 overflow-hidden rounded-xl shadow-lg">
+              <div className="flex flex-col md:flex-row">
+                {/* Profile Info Section */}
+                <div className="p-6 flex-1">
+                  <div className="space-y-4">
+                    {/* Categories and Motivations in a 2-column grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {/* Interest Categories */}
+                      <div className="bg-blue-50 rounded-lg p-4">
+                        <div className="flex items-center mb-3">
+                          <div className="w-6 h-6 bg-blue-200 rounded-full flex items-center justify-center mr-2 p-1">
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="#3b82f6" className="size-6">
+  <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 8.25h15m-16.5 7.5h15m-1.8-13.5-3.9 19.5m-2.1-19.5-3.9 19.5" />
+</svg>
+
+                          </div>
+                          <h3 className="text-lg font-medium text-gray-700">Interests</h3>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {surveyData?.categories.map((category, index) => (
+                            <span key={index} className="text-xs px-3 py-1 bg-white text-blue-600 rounded-full border border-blue-100">
+                              {category}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Motivations */}
+                      <div className="bg-green-50 rounded-lg p-4">
+                        <div className="flex items-center mb-3">
+                          <div className="w-6 h-6 bg-green-200 rounded-full flex items-center justify-center mr-2 p-1">
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="#10b981" className="size-6">
+  <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z" />
+</svg>
+
+                          </div>
+                          <h3 className="text-lg font-medium text-gray-700">Motivations</h3>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {surveyData?.motivations.map((motivation, index) => (
+                            <span key={index} className="text-xs px-3 py-1 bg-white text-green-600 rounded-full border border-green-100">
+                              {motivation}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="bg-purple-50 rounded-lg p-4">
+                        <div className="flex items-center mb-3">
+                          <div className="w-6 h-6 bg-purple-200 rounded-full flex items-center justify-center mr-2 p-1">
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="#9333ea" className="size-6">
+  <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 14.15v4.25c0 1.094-.787 2.036-1.872 2.18-2.087.277-4.216.42-6.378.42s-4.291-.143-6.378-.42c-1.085-.144-1.872-1.086-1.872-2.18v-4.25m16.5 0a2.18 2.18 0 0 0 .75-1.661V8.706c0-1.081-.768-2.015-1.837-2.175a48.114 48.114 0 0 0-3.413-.387m4.5 8.006c-.194.165-.42.295-.673.38A23.978 23.978 0 0 1 12 15.75c-2.648 0-5.195-.429-7.577-1.22a2.016 2.016 0 0 1-.673-.38m0 0A2.18 2.18 0 0 1 3 12.489V8.706c0-1.081.768-2.015 1.837-2.175a48.111 48.111 0 0 1 3.413-.387m7.5 0V5.25A2.25 2.25 0 0 0 13.5 3h-3a2.25 2.25 0 0 0-2.25 2.25v.894m7.5 0a48.667 48.667 0 0 0-7.5 0M12 12.75h.008v.008H12v-.008Z" />
+</svg>
+
+                          </div>
+                          <h3 className="text-lg font-medium text-gray-700">Occupation</h3>
+                        </div>
+                        <span className="text-xs px-3 py-1 bg-white text-purple-600 rounded-full border border-purple-100">
+                          {surveyData?.occupation || 'Not specified'}
+                        </span>
+                      </div>
+                    </div>
+
+
+                      {/* Life Goal */}
+                      <div className="bg-amber-50 rounded-lg p-4">
+                        <div className="flex items-center mb-3">
+                          <div className="w-6 h-6 bg-amber-200 rounded-full flex items-center justify-center mr-2 p-1">
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="#d97706" className="size-6">
+  <path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 0 1 1.04 0l2.125 5.111a.563.563 0 0 0 .475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 0 0-.182.557l1.285 5.385a.562.562 0 0 1-.84.61l-4.725-2.885a.562.562 0 0 0-.586 0L6.982 20.54a.562.562 0 0 1-.84-.61l1.285-5.386a.562.562 0 0 0-.182-.557l-4.204-3.602a.562.562 0 0 1 .321-.988l5.518-.442a.563.563 0 0 0 .475-.345L11.48 3.5Z" />
+</svg>
+
+                          </div>
+                          <h3 className="text-lg font-medium text-gray-700">Life Goal</h3>
+                        </div>
+                        <p className="text-xs text-gray-600 bg-white p-2 rounded border border-amber-100">
+                          {surveyData?.lifeGoals || 'Not specified'}
+                        </p>
+                      </div>
+                  
+                  </div>
+                </div>
+              </div>
+            </Card>
+          </div>
+          
+          
           
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
             <div className="lg:col-span-3">
@@ -712,7 +666,11 @@ function AppContent() {
                     </div>
                     <div className="bg-amber-50 rounded-lg p-4 flex flex-col items-center justify-center">
                       <div className="text-amber-500 mb-1 text-sm font-medium">PROGRESS</div>
-                      <div className="text-base font-semibold">0%</div>
+                      <div className="text-base font-semibold">
+                        {generatedPathInfo.tasks.length > 0 
+                          ? Math.round((generatedPathInfo.tasks.filter(t => t.status === 'completed').length / generatedPathInfo.tasks.length) * 100) 
+                          : 0}%
+                      </div>
                     </div>
                     <div className="bg-purple-50 rounded-lg p-4 flex flex-col items-center justify-center">
                       <div className="text-purple-500 mb-1 text-sm font-medium">CREATED</div>
@@ -745,8 +703,12 @@ function AppContent() {
                     </div>
                     
                     <div className="space-y-4">
-                      {generatedPathInfo.tasks.map((task: Task, idx: number) => (
-                        <div key={idx} className="border border-gray-100 bg-white rounded-lg p-5 shadow-sm hover:shadow-md transition-shadow">
+                      {generatedPathInfo.tasks.map((task: Task, idx: number) => {
+                        // Add a local state variable to track pending completion status
+                        const isPendingCompletion = loading && task.status !== 'completed' && task._pendingCompletion;
+                        
+                        return (
+                        <div key={idx} className={`border-2 ${task.status === 'completed' || isPendingCompletion ? 'border-green-500 bg-green-50' : 'border-gray-100 bg-white'} rounded-lg p-5 shadow-sm hover:shadow-md transition-all duration-200`}>
                           <div className="flex justify-between items-start mb-3">
                             <div className="flex items-center gap-3">
                               <div className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-100 text-blue-600 font-medium flex items-center justify-center">
@@ -764,7 +726,7 @@ function AppContent() {
                                 }`}>
                                 {task.priority}
                               </span>
-                              <span className="bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full">
+                              <span className={`text-xs px-2 py-1 rounded-full ${task.status === 'completed' ? 'bg-green-100 text-green-800' : 'bg-purple-100 text-purple-800'}`}>
                                 {task.status}
                               </span>
                             </div>
@@ -780,12 +742,96 @@ function AppContent() {
                                 ))}
                               </div>
                             )}
-                            <Button variant="ghost" size="sm" className="text-xs">
-                              Mark Complete
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className={`text-xs ${task.status === 'completed' ? 'bg-green-100 text-green-700' : ''}`}
+                              onClick={async () => {
+                                if (!connectedAddress) {
+                                  toast.error("Please connect your wallet first");
+                                  return;
+                                }
+                                
+                                // Generate a task ID if it doesn't exist
+                                const taskId = task.id || parseInt(
+                                  Web3.utils.keccak256(
+                                    `${task.title}${task.description}${Date.now()}`
+                                  ).slice(2, 10), 
+                                  16
+                                );
+                                
+                                // Update task status
+                                try {
+                                  setLoading(true);
+                                  
+                                  // Mark task as pending completion for immediate visual feedback
+                                  const updatedTasks = [...generatedPathInfo.tasks];
+                                  const taskIndex = updatedTasks.indexOf(task);
+                                  if (taskIndex !== -1) {
+                                    updatedTasks[taskIndex] = {
+                                      ...task,
+                                      _pendingCompletion: true
+                                    };
+                                    
+                                    setGeneratedPathInfo({
+                                      ...generatedPathInfo,
+                                      tasks: updatedTasks
+                                    });
+                                  }
+                                  
+                                  const txHash = await updateTaskStatus(connectedAddress, taskId, 'completed');
+                                  
+                                  if (txHash) {
+                                    // Update the task in the state
+                                    const updatedTasks = [...generatedPathInfo.tasks];
+                                    const taskIndex = updatedTasks.indexOf(task);
+                                    if (taskIndex !== -1) {
+                                      // Update task status to completed and remove pending flag
+                                      updatedTasks[taskIndex] = {
+                                        ...task,
+                                        status: 'completed',
+                                        id: taskId,
+                                        _pendingCompletion: false
+                                      };
+                                      
+                                      setGeneratedPathInfo({
+                                        ...generatedPathInfo,
+                                        tasks: updatedTasks
+                                      });
+                                      
+                                      toast.success("Task marked as completed!");
+                                    }
+                                  }
+                                } catch (error: any) {
+                                  console.error("Error updating task status:", error);
+                                  toast.error(error.message || "Failed to update task status");
+                                  
+                                  // Revert the pending visual state if there's an error
+                                  const updatedTasks = [...generatedPathInfo.tasks];
+                                  const taskIndex = updatedTasks.indexOf(task);
+                                  if (taskIndex !== -1) {
+                                    updatedTasks[taskIndex] = {
+                                      ...updatedTasks[taskIndex],
+                                      _pendingCompletion: false
+                                    };
+                                    
+                                    setGeneratedPathInfo({
+                                      ...generatedPathInfo,
+                                      tasks: updatedTasks
+                                    });
+                                  }
+                                } finally {
+                                  setLoading(false);
+                                }
+                              }}
+                              disabled={task.status === 'completed' || loading}
+                            >
+                              {task.status === 'completed' ? 'Completed' : 'Mark Complete'}
                             </Button>
                           </div>
                         </div>
-                      ))}
+                      );
+                    })}
                     </div>
                   </div>
                   
@@ -815,9 +861,10 @@ function AppContent() {
                         className="border-red-200 text-red-700 hover:bg-red-50 hover:text-red-800"
                         onClick={() => setShowGeneratedPath(false)}
                       >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h12a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V7a1 1 0 00-1-1z" clipRule="evenodd" />
-                        </svg>
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-6">
+  <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+</svg>
+
                         Remove
                       </Button>
                       <Button 
@@ -835,10 +882,10 @@ function AppContent() {
                           </span>
                         ) : (
                           <>
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                              <path d="M2 4a2 2 0 012-2h5a1 1 0 01.707.293l7 7A1 1 0 0117 10v6a2 2 0 01-2 2H4a2 2 0 01-2-2V4z" />
-                              <path d="M12 2a1 1 0 011 1v7.586l-2-2V3a1 1 0 011-1z" />
-                            </svg>
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-6">
+  <path strokeLinecap="round" strokeLinejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0 1 11.186 0Z" />
+</svg>
+
                             Save to Your Paths
                           </>
                         )}

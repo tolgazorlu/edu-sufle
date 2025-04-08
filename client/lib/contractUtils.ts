@@ -17,12 +17,23 @@ export interface Path {
 }
 
 // Define interface for path info returned from contract
-export interface PathInfo {
+export interface GeneratedPathInfo {
+  pathId: string;
+  creator: string;
+  description: string;
+  title: string;
+  timestamp: string;
+}
+
+// Interface for a path with all details
+export interface PathWithTasks {
+  id: string;
   title: string;
   description: string;
   creator: string;
-  timestamp: string;
-  // Add other properties that might be returned from the contract
+  timestamp: number;
+  tasks: Task[];
+  transactionHash?: string;
 }
 
 // Replace with your contract address
@@ -118,7 +129,7 @@ export async function generatePathWithAI(
   }
 }
 
-export async function getUserPaths(address: string): Promise<any[]> {
+export async function getUserPaths(address: string): Promise<PathWithTasks[]> {
   if (!window.ethereum) {
     toast.error("Please install MetaMask to use this feature");
     return [];
@@ -129,24 +140,53 @@ export async function getUserPaths(address: string): Promise<any[]> {
     const contract = new web3.eth.Contract(SufleABI as any, CONTRACT_ADDRESS);
 
     // Get path IDs for the user
-    const pathIds = await contract.methods.getUserGeneratedPaths(address).call();
+    const pathIds = await contract.methods.getUserGeneratedPaths(address).call() as string[];
     
     if (!pathIds || pathIds.length === 0) {
       return [];
     }
 
     // Get details for each path
-    const paths = [];
+    const paths: PathWithTasks[] = [];
     for (const pathId of pathIds) {
-      const pathInfo = await contract.methods.getGeneratedPathInfo(pathId).call() as PathInfo;
-      
-      paths.push({
-        id: pathId,
-        title: pathInfo.title || `Path #${pathId}`,
-        description: pathInfo.description,
-        creator: pathInfo.creator,
-        timestamp: new Date(Number(pathInfo.timestamp) * 1000)
-      });
+      try {
+        // Get path info from contract
+        const pathInfoResult = await contract.methods.getGeneratedPathInfo(pathId).call();
+        
+        // Web3 returns an object with both numeric indices and named properties
+        // We'll extract the values safely
+        let pathData: any;
+        
+        // Check if the result is an array-like object or a structured object
+        if (Array.isArray(pathInfoResult)) {
+          // It's an array-like result
+          pathData = {
+            pathId: pathInfoResult[0],
+            creator: pathInfoResult[1],
+            description: pathInfoResult[2],
+            title: pathInfoResult[3],
+            timestamp: pathInfoResult[4]
+          };
+        } else {
+          // It's a structured object
+          pathData = pathInfoResult;
+        }
+        
+        // Fetch tasks for this path
+        const tasks = await fetchTasksForGeneratedPath(pathId, web3, contract);
+        
+        paths.push({
+          id: pathId,
+          title: pathData.title || `Path #${pathId}`,
+          description: pathData.description || '',
+          creator: pathData.creator || '',
+          timestamp: Number(pathData.timestamp || 0) * 1000,
+          tasks: tasks
+        });
+      } catch (pathError) {
+        console.error(`Error fetching path ${pathId}:`, pathError);
+        // Continue with the next path
+      }
     }
 
     return paths;
@@ -157,7 +197,7 @@ export async function getUserPaths(address: string): Promise<any[]> {
   }
 }
 
-export async function getPathDetails(pathId: number): Promise<any | null> {
+export async function getPathDetails(pathId: number): Promise<PathWithTasks | null> {
   if (!window.ethereum) {
     toast.error("Please install MetaMask to use this feature");
     return null;
@@ -167,14 +207,38 @@ export async function getPathDetails(pathId: number): Promise<any | null> {
     const web3 = new Web3(window.ethereum);
     const contract = new web3.eth.Contract(SufleABI as any, CONTRACT_ADDRESS);
 
-    const pathInfo = await contract.methods.getGeneratedPathInfo(pathId).call() as PathInfo;
+    // Get path info from contract
+    const pathInfoResult = await contract.methods.getGeneratedPathInfo(pathId).call();
+    
+    // Web3 returns an object with both numeric indices and named properties
+    // We'll extract the values safely
+    let pathData: any;
+    
+    // Check if the result is an array-like object or a structured object
+    if (Array.isArray(pathInfoResult)) {
+      // It's an array-like result
+      pathData = {
+        pathId: pathInfoResult[0],
+        creator: pathInfoResult[1],
+        description: pathInfoResult[2],
+        title: pathInfoResult[3],
+        timestamp: pathInfoResult[4]
+      };
+    } else {
+      // It's a structured object
+      pathData = pathInfoResult;
+    }
+    
+    // Fetch tasks for this path
+    const tasks = await fetchTasksForGeneratedPath(pathId, web3, contract);
     
     return {
-      id: pathId,
-      title: pathInfo.title || `Path #${pathId}`,
-      description: pathInfo.description,
-      creator: pathInfo.creator,
-      timestamp: new Date(Number(pathInfo.timestamp) * 1000)
+      id: pathId.toString(),
+      title: pathData.title || `Path #${pathId}`,
+      description: pathData.description || '',
+      creator: pathData.creator || '',
+      timestamp: Number(pathData.timestamp || 0) * 1000,
+      tasks: tasks
     };
   } catch (error) {
     console.error("Error fetching path details:", error);
@@ -182,3 +246,69 @@ export async function getPathDetails(pathId: number): Promise<any | null> {
     return null;
   }
 } 
+
+// Function to update task status to completed
+export async function updateTaskStatus(
+  address: string,
+  taskId: number | string,
+  newStatus: string
+): Promise<string | null> {
+  if (!window.ethereum) {
+    toast.error("Please install MetaMask to use this feature");
+    return null;
+  }
+
+  try {
+    const web3 = new Web3(window.ethereum);
+    const contract = new web3.eth.Contract(SufleABI as any, CONTRACT_ADDRESS);
+
+    const result = await contract.methods.updateTaskStatus(
+      taskId,
+      newStatus
+    ).send({ from: address });
+
+    return result.transactionHash;
+  } catch (error) {
+    console.error("Error updating task status:", error);
+    toast.error("Failed to update task status");
+    return null;
+  }
+}
+
+// Helper function to fetch tasks for a generated path
+async function fetchTasksForGeneratedPath(pathId: number | string, web3: any, contract: any): Promise<Task[]> {
+  try {
+    // Since the Sufle.sol contract doesn't have a direct way to get tasks for a generated path,
+    // we'll create deterministic mock tasks based on the pathId.
+    // In a real implementation, you would need to modify the contract to store and retrieve tasks for generated paths.
+    
+    // Generate a deterministic set of tasks based on the pathId
+    const pathIdStr = pathId.toString();
+    const numTasks = Math.max(1, (parseInt(pathIdStr.substring(pathIdStr.length - 2), 16) % 5) + 1); // 1-5 tasks
+    
+    const tasks: Task[] = [];
+    const priorities = ['high', 'medium', 'low'];
+    const statuses = ['pending', 'in-progress', 'completed'];
+    
+    for (let i = 0; i < numTasks; i++) {
+      const taskNumber = i + 1;
+      // Use consistent hash-based indices to ensure the same pathId always gets the same tasks
+      const hash = parseInt(pathIdStr.substring(0, 4), 16);
+      const priorityIndex = (hash + i) % 3;
+      const statusIndex = (hash + i * 2) % 3;
+      
+      tasks.push({
+        title: `Task ${taskNumber}: Learn key concept ${taskNumber}`,
+        description: `This task involves learning and practicing the fundamental concepts related to topic ${taskNumber}.`,
+        priority: priorities[priorityIndex],
+        status: statuses[statusIndex],
+        tags: `concept${taskNumber},learning,practice`
+      });
+    }
+    
+    return tasks;
+  } catch (error) {
+    console.error("Error fetching tasks for path:", error);
+    return [];
+  }
+}
