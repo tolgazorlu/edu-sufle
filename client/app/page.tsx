@@ -181,7 +181,7 @@ export default function LandingPage() {
                 src="/sufle-bg-1.jpg"
                 width={800}
                 height={600}
-                alt="Sufle Dashboard Preview"
+                alt="Sufle App Preview"
                 className="rounded-lg object-cover w-full h-auto"
               />
               <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-t from-slate-950 to-transparent opacity-60 rounded-2xl"></div>

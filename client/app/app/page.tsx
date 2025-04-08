@@ -49,6 +49,12 @@ function AppContent() {
   const [accountBalance, setAccountBalance] = useState("0");
   const EDU_TOKEN_PRICE = "0.01";
   const router = useRouter();
+  const [surveyData, setSurveyData] = useState<{
+    categories: string[];
+    motivations: string[];
+    occupation: string;
+    lifeGoals: string;
+  } | null>(null);
 
   const handleConnect = (address: string) => {
     setConnectedAddress(address);
@@ -61,7 +67,7 @@ function AppContent() {
         try {
           // Initialize Web3 instance
           const web3 = new Web3(window.ethereum);
-          const contractAddress = "0xdf57089febbacf7ba0bc227dafbffa9fc08a93fdc68e1e42411a14efcf23656e";
+          const contractAddress = "0xfC9337a66bB4704f867091d439883b9F3068843E";
           const contract = new web3.eth.Contract(SufleABI, contractAddress);
           
           // Get user survey count from the contract
@@ -80,6 +86,55 @@ function AppContent() {
     
     checkSurveyStatus();
   }, [connectedAddress, router]);
+
+  // Fetch survey data when address is connected
+  useEffect(() => {
+    const fetchSurveyData = async () => {
+      if (connectedAddress) {
+        try {
+          console.log("Fetching survey data for address:", connectedAddress);
+          const web3 = new Web3(window.ethereum);
+          const contract = new web3.eth.Contract(SufleABI, "0xfC9337a66bB4704f867091d439883b9F3068843E");
+          
+          const surveyCount = Number(await contract.methods.getUserSurveyCount(connectedAddress).call());
+          console.log("Survey count:", surveyCount);
+          
+          if (surveyCount > 0) {
+            console.log("Fetching latest survey info...");
+            // Get the user's survey IDs
+            const surveyIds: string[] = await contract.methods.getUserSurveyIds(connectedAddress).call();
+            if (surveyIds && surveyIds.length > 0) {
+              const latestSurveyId = surveyIds[surveyIds.length - 1];
+              
+              // Get the latest survey info
+              interface SurveyResponse {
+                [key: number]: string | string[];
+              }
+              const surveyData = await contract.methods.getSurveyInfo(latestSurveyId).call() as SurveyResponse;
+              console.log("Raw survey data:", surveyData);
+              
+              setSurveyData({
+                categories: Array.isArray(surveyData[2]) ? surveyData[2] as string[] : [],
+                motivations: Array.isArray(surveyData[3]) ? surveyData[3] as string[] : [],
+                occupation: (surveyData[4] as string) || 'Not specified',
+                lifeGoals: (surveyData[5] as string) || 'Not specified'
+              });
+              
+              console.log("Processed survey data:", surveyData);
+            } else {
+              console.log("No survey IDs found");
+            }
+          } else {
+            console.log("No surveys found for this address");
+          }
+        } catch (error) {
+          console.error("Error fetching survey data:", error);
+        }
+      }
+    };
+    
+    fetchSurveyData();
+  }, [connectedAddress]);
 
   const handleDisconnect = () => {
     setConnectedAddress("");
@@ -377,80 +432,183 @@ function AppContent() {
           
           {/* User Profile Card */}
           <div className="mb-6">
-            <Card className="shadow-lg overflow-hidden rounded-xl border border-purple-100">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-0">
-                <div className="md:col-span-3 p-6 md:p-8">                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-8">
+            <Card className="shadow-lg overflow-hidden rounded-xl">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div className="md:col-span-3 p-8">
+                  <div className="flex items-center mb-6">
+                    <div className="bg-indigo-100/50 p-2 rounded-lg mr-3">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-indigo-600" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3zM3.31 9.397L5 10.12v4.102a8.969 8.969 0 00-1.05-.174 1 1 0 01-.89-.89 11.115 11.115 0 01.25-3.762zM9.3 16.573A9.026 9.026 0 007 14.935v-3.957l1.818.78a3 3 0 002.364 0l5.508-2.361a11.026 11.026 0 01.25 3.762 1 1 0 01-.89.89 8.968 8.968 0 00-5.35 2.524 1 1 0 01-1.4 0zM6 18a1 1 0 001-1v-2.065a8.935 8.935 0 00-2-.712V17a1 1 0 001 1z" />
+                      </svg>
+                    </div>
+                    <h2 className="text-xl font-bold text-gray-900">Your Learning Profile</h2>
+                  </div>
+
+                  <div className="space-y-8">
+                    {/* Interest Categories */}
                     <div>
                       <div className="flex items-center mb-3">
-                        <div className="bg-indigo-100 p-2 rounded-lg mr-3">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-indigo-600" viewBox="0 0 20 20" fill="currentColor">
+                        <div className="bg-indigo-100/50 p-1.5 rounded-lg mr-2">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-indigo-600" viewBox="0 0 20 20" fill="currentColor">
                             <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3zM3.31 9.397L5 10.12v4.102a8.969 8.969 0 00-1.05-.174 1 1 0 01-.89-.89 11.115 11.115 0 01.25-3.762zM9.3 16.573A9.026 9.026 0 007 14.935v-3.957l1.818.78a3 3 0 002.364 0l5.508-2.361a11.026 11.026 0 01.25 3.762 1 1 0 01-.89.89 8.968 8.968 0 00-5.35 2.524 1 1 0 01-1.4 0zM6 18a1 1 0 001-1v-2.065a8.935 8.935 0 00-2-.712V17a1 1 0 001 1z" />
                           </svg>
                         </div>
-                        <h3 className="font-semibold text-indigo-900">Interest Categories:</h3>
+                        <h3 className="text-gray-700 font-medium">Interest Categories:</h3>
                       </div>
-                      <div className="flex flex-wrap gap-2 mb-6 ml-12">
-                        <span className="bg-indigo-100 text-indigo-800 text-xs font-medium px-3 py-1.5 rounded-full">Education</span>
-                        <span className="bg-blue-100 text-blue-800 text-xs font-medium px-3 py-1.5 rounded-full">Technology</span>
-                        <span className="bg-purple-100 text-purple-800 text-xs font-medium px-3 py-1.5 rounded-full">Community</span>
+                      <div className="flex flex-wrap gap-2 ml-8">
+                        {surveyData?.categories.map((category, index) => (
+                          <span key={index} className="bg-indigo-100/50 text-indigo-700 text-sm px-3 py-1 rounded-full">
+                            {category}
+                          </span>
+                        ))}
                       </div>
-                      
+                    </div>
+
+                    {/* Motivations */}
+                    <div>
                       <div className="flex items-center mb-3">
-                        <div className="bg-indigo-100 p-2 rounded-lg mr-3">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-indigo-600" viewBox="0 0 20 20" fill="currentColor">
+                        <div className="bg-emerald-100/50 p-1.5 rounded-lg mr-2">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-emerald-600" viewBox="0 0 20 20" fill="currentColor">
                             <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 1.414L10.586 9H7a1 1 0 100 2h3.586l-1.293 1.293a1 1 0 101.414 1.414l3-3a1 1 0 000-1.414z" clipRule="evenodd" />
                           </svg>
                         </div>
-                        <h3 className="font-semibold text-indigo-900">Motivations:</h3>
+                        <h3 className="text-gray-700 font-medium">Motivations:</h3>
                       </div>
-                      <div className="flex flex-wrap gap-2 ml-12">
-                        <span className="bg-emerald-100 text-emerald-800 text-xs font-medium px-3 py-1.5 rounded-full">Learning</span>
-                        <span className="bg-sky-100 text-sky-800 text-xs font-medium px-3 py-1.5 rounded-full">Networking</span>
-                        <span className="bg-amber-100 text-amber-800 text-xs font-medium px-3 py-1.5 rounded-full">Growth</span>
+                      <div className="flex flex-wrap gap-2 ml-8">
+                        {surveyData?.motivations.map((motivation, index) => (
+                          <span key={index} className="bg-emerald-100/50 text-emerald-700 text-sm px-3 py-1 rounded-full">
+                            {motivation}
+                          </span>
+                        ))}
                       </div>
                     </div>
-                    
-                    <div>
-                      <div className="flex items-center mb-3">
-                        <div className="bg-indigo-100 p-2 rounded-lg mr-3">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-indigo-600" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M6 6V5a3 3 0 013-3h2a3 3 0 013 3v1h2a2 2 0 012 2v3.57A22.952 22.952 0 0110 13a22.95 22.95 0 01-8-1.43V8a2 2 0 012-2h2zm2-1a1 1 0 011-1h2a1 1 0 011 1v1H8V5zm1 5a1 1 0 011-1h.01a1 1 0 110 2H10a1 1 0 01-1-1z" clipRule="evenodd" />
-                            <path d="M2 13.692V16a2 2 0 002 2h12a2 2 0 002-2v-2.308A24.974 24.974 0 0110 15c-2.796 0-5.487-.46-8-1.308z" />
-                          </svg>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      {/* Occupation */}
+                      <div>
+                        <div className="flex items-center mb-3">
+                          <div className="bg-purple-100/50 p-1.5 rounded-lg mr-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-purple-600" viewBox="0 0 20 20" fill="currentColor">
+                              <path fillRule="evenodd" d="M6 6V5a3 3 0 013-3h2a3 3 0 013 3v1h2a2 2 0 012 2v3.57A22.952 22.952 0 0110 13a22.95 22.95 0 01-8-1.43V8a2 2 0 012-2h2zm2-1a1 1 0 011-1h2a1 1 0 011 1v1H8V5z" />
+                            </svg>
+                          </div>
+                          <h3 className="text-gray-700 font-medium">Occupation:</h3>
                         </div>
-                        <h3 className="font-semibold text-indigo-900">Occupation:</h3>
-                      </div>
-                      <div className="mb-6 ml-12">
-                        <span className="bg-violet-100 text-violet-800 text-xs font-medium px-3 py-1.5 rounded-full">Educator</span>
-                      </div>
-                      
-                      <div className="flex items-center mb-3">
-                        <div className="bg-indigo-100 p-2 rounded-lg mr-3">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-indigo-600" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                          </svg>
+                        <div className="ml-8">
+                          <span className="bg-purple-100/50 text-purple-700 text-sm px-3 py-1 rounded-full">
+                            {surveyData?.occupation || 'Not specified'}
+                          </span>
                         </div>
-                        <h3 className="font-semibold text-indigo-900">Life Goal:</h3>
                       </div>
-                      <div className="ml-12">
-                        <p className="text-indigo-700 font-medium">Empowering others through knowledge</p>
+
+                      {/* Life Goal */}
+                      <div>
+                        <div className="flex items-center mb-3">
+                          <div className="bg-blue-100/50 p-1.5 rounded-lg mr-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-blue-600" viewBox="0 0 20 20" fill="currentColor">
+                              <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                            </svg>
+                          </div>
+                          <h3 className="text-gray-700 font-medium">Life Goal:</h3>
+                        </div>
+                        <div className="ml-8">
+                          <p className="text-gray-600">{surveyData?.lifeGoals || 'Not specified'}</p>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
-                
-                <div className="bg-indigo-600 p-8 flex flex-col justify-center items-center text-white">
+
+                <div className="bg-gradient-to-br from-indigo-600 to-violet-600 p-8 flex flex-col justify-center items-center text-white">
                   <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mb-4">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                     </svg>
                   </div>
                   <h3 className="text-xl font-bold mb-3">Profile Strength</h3>
-                  <div className="w-full bg-white/20 rounded-full h-3 mb-2 overflow-hidden">
-                    <div className="bg-white h-3 rounded-full" style={{ width: '85%' }}></div>
+                  <div className="w-full bg-white/20 rounded-full h-2.5 mb-2">
+                    <div className="bg-white h-2.5 rounded-full" style={{ width: '85%' }}></div>
                   </div>
                   <p className="text-lg font-medium">85% Complete</p>
+                </div>
+              </div>
+            </Card>
+          </div>
+          
+          {/* Product Info Card */}
+          <div className="mb-6">
+            <Card className="shadow-lg overflow-hidden rounded-xl border border-emerald-100">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-0">
+                <div className="md:col-span-2 p-6 md:p-8">
+                  <div className="flex items-center mb-4">
+                    <div className="bg-emerald-100 p-2 rounded-lg mr-3">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-emerald-600" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                    <h2 className="text-xl font-bold text-gray-900">Sufle - Your Learning Journey Partner</h2>
+                  </div>
+                  
+                  <p className="text-gray-600 mb-6">
+                    Sufle is a decentralized learning platform that helps you create personalized learning paths using AI. Track your progress, earn rewards, and connect with other learners in the ecosystem.
+                  </p>
+                  
+                  <div className="grid grid-cols-2 gap-4 mb-6">
+                    <div className="bg-emerald-50 rounded-lg p-4">
+                      <div className="text-emerald-600 font-semibold mb-1">EDU Token Price</div>
+                      <div className="text-2xl font-bold text-emerald-700">0.01 ETH</div>
+                    </div>
+                    <div className="bg-emerald-50 rounded-lg p-4">
+                      <div className="text-emerald-600 font-semibold mb-1">Network</div>
+                      <div className="text-lg font-semibold text-emerald-700">Open Campus Codex</div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex flex-wrap gap-2">
+                    <Button variant="outline" className="border-emerald-200 text-emerald-700 hover:bg-emerald-50">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z" />
+                        <path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z" />
+                      </svg>
+                      View Contract
+                    </Button>
+                    <Button variant="outline" className="border-emerald-200 text-emerald-700 hover:bg-emerald-50">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                      </svg>
+                      Documentation
+                    </Button>
+                  </div>
+                </div>
+                
+                <div className="bg-gradient-to-br from-emerald-600 to-teal-600 p-8 flex flex-col justify-center text-white">
+                  <h3 className="text-lg font-bold mb-4">Platform Features</h3>
+                  <ul className="space-y-3">
+                    <li className="flex items-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-emerald-200" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                      AI-Powered Learning Paths
+                    </li>
+                    <li className="flex items-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-emerald-200" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                      Decentralized Progress Tracking
+                    </li>
+                    <li className="flex items-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-emerald-200" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                      EDU Token Rewards
+                    </li>
+                    <li className="flex items-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-emerald-200" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                      Community Learning
+                    </li>
+                  </ul>
                 </div>
               </div>
             </Card>
@@ -573,7 +731,7 @@ function AppContent() {
                       <div className="flex gap-2">
                         <Button variant="outline" size="sm" className="text-sm">
                           <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                            <path d="M8 5a1 1 0 100 2h5.586l-1.293 1.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L13.586 5H8zM12 15a1 1 0 100-2H6.414l1.293-1.293a1 1 0 10-1.414-1.414l-3 3a1 1 0 000 1.414l3 3a1 1 0 001.414-1.414L6.414 15H12z" />
+                            <path d="M8 5a1 1 0 100 2h5.586l-1.293 1.293a1 1 0 001.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z" />
                           </svg>
                           Sort Tasks
                         </Button>
@@ -658,7 +816,7 @@ function AppContent() {
                         onClick={() => setShowGeneratedPath(false)}
                       >
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                          <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h12a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V7a1 1 0 00-1-1z" clipRule="evenodd" />
                         </svg>
                         Remove
                       </Button>
@@ -731,7 +889,7 @@ function AppContent() {
                 
                 <div className="mt-4 flex items-center text-amber-700 bg-amber-50 p-3 rounded-lg text-sm">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.414-1.414L11 9.414V6z" clipRule="evenodd" />
                   </svg>
                   Generation usually takes about 15-20 seconds.
                 </div>

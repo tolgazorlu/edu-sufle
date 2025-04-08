@@ -35,7 +35,7 @@ export default function PathDetailsPage({ params }: { params: { id: string } }) 
         setPath(pathDetails)
       } else {
         toast.error("Path not found")
-        router.push("/dashboard/paths")
+        router.push("/app/paths")
       }
     } catch (error) {
       console.error("Error fetching path details:", error)
@@ -56,7 +56,7 @@ export default function PathDetailsPage({ params }: { params: { id: string } }) 
               <Button 
                 variant="outline" 
                 className="rounded-full w-8 h-8 p-0" 
-                onClick={() => router.push("/dashboard/paths")}
+                onClick={() => router.push("/app/paths")}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M19 12H5M12 19l-7-7 7-7" />
@@ -92,7 +92,7 @@ export default function PathDetailsPage({ params }: { params: { id: string } }) 
                   <h2 className="text-xl font-semibold mb-2">Path Not Found</h2>
                   <p className="text-gray-600 mb-4">The requested path could not be found.</p>
                   <Button 
-                    onClick={() => router.push('/dashboard/paths')}
+                    onClick={() => router.push('/app/paths')}
                     className="bg-blue-600 hover:bg-blue-700"
                   >
                     Back to My Paths
@@ -116,13 +116,13 @@ export default function PathDetailsPage({ params }: { params: { id: string } }) 
                   <div className="flex justify-between">
                     <Button 
                       variant="outline" 
-                      onClick={() => router.push('/dashboard/paths')}
+                      onClick={() => router.push('/app/paths')}
                     >
                       Back to My Paths
                     </Button>
                     <Button 
                       className="bg-blue-600 hover:bg-blue-700"
-                      onClick={() => router.push('/dashboard')}
+                      onClick={() => router.push('/app')}
                     >
                       Generate New Path
                     </Button>

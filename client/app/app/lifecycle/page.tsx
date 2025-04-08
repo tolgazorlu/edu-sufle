@@ -13,6 +13,8 @@ import SurveyProgress from "@/components/lifecycle/survey-progress"
 import { AppSidebar } from "@/components/app-sidebar"
 import { SiteHeader } from "@/components/site-header"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
+import Web3 from "web3"
+import { SUFLE_CONTRACT_ADDRESS, SUFLE_ABI } from "@/lib/contracts"
 
 export type SurveyData = {
   lifeGoals: string
@@ -30,6 +32,8 @@ export default function Lifecycle() {
     categories: [],
     occupation: "",
   })
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const totalSteps = 5
 
@@ -54,16 +58,58 @@ export default function Lifecycle() {
 
   const handleSubmit = async () => {
     try {
-      // Here you would typically send the data to your API
-      console.log("Submitting survey data:", surveyData)
+      setIsSubmitting(true)
+      setError(null)
 
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      if (!window.ethereum) {
+        throw new Error("Please install MetaMask")
+      }
 
-      // Redirect to dashboard or confirmation page
-      router.push("/dashboard")
+      const web3 = new Web3(window.ethereum)
+      const accounts = await web3.eth.requestAccounts()
+      const account = accounts[0]
+
+      console.log("Submitting survey with account:", account)
+      console.log("Contract address:", SUFLE_CONTRACT_ADDRESS)
+      console.log("Survey data:", surveyData)
+
+      const contract = new web3.eth.Contract(SUFLE_ABI, SUFLE_CONTRACT_ADDRESS)
+
+      // Send the transaction and wait for it to be mined
+      const transaction = await contract.methods
+        .createUserSurvey(
+          surveyData.occupation,
+          surveyData.categories,
+          surveyData.motivations,
+          surveyData.lifeGoals
+        )
+        .send({ from: account })
+
+      console.log("Transaction hash:", transaction.transactionHash)
+      console.log("Transaction receipt:", transaction)
+
+      // Wait for a few blocks to ensure the transaction is confirmed
+      await new Promise(resolve => setTimeout(resolve, 5000))
+
+      // Verify the survey was created
+      const surveyCount = Number(await contract.methods.getUserSurveyCount(account).call())
+      console.log("Survey count after submission:", surveyCount)
+
+      if (surveyCount === 0) {
+        throw new Error("Survey submission failed - survey count is still 0")
+      }
+
+      // Store survey data in localStorage for faster access
+      localStorage.setItem("surveyData", JSON.stringify(surveyData))
+      localStorage.setItem("surveyCompleted", "true")
+
+      // Redirect to app
+      router.push("/app")
     } catch (error) {
       console.error("Error submitting survey:", error)
+      setError(error instanceof Error ? error.message : "Failed to submit survey. Please try again.")
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -133,11 +179,20 @@ export default function Lifecycle() {
                     Next
                   </Button>
                 ) : (
-                  <Button onClick={handleSubmit} className="bg-green-600 hover:bg-green-700">
-                    Submit
+                  <Button 
+                    onClick={handleSubmit} 
+                    className="bg-green-600 hover:bg-green-700"
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? "Submitting..." : "Submit"}
                   </Button>
                 )}
               </CardFooter>
+              {error && (
+                <div className="px-6 pb-6 text-red-500 text-sm">
+                  {error}
+                </div>
+              )}
             </Card>
           </div>
         </div>

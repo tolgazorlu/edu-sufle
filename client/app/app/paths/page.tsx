@@ -39,7 +39,7 @@ export default function PathsPage() {
   }
 
   const handleViewPath = (pathId: string) => {
-    router.push(`/dashboard/paths/${pathId}`)
+    router.push(`/app/paths/${pathId}`)
   }
 
   return (
@@ -75,7 +75,7 @@ export default function PathsPage() {
                   <h2 className="text-xl font-semibold mb-2">No Learning Paths Found</h2>
                   <p className="text-gray-600 mb-4">You haven't saved any learning paths yet.</p>
                   <Button 
-                    onClick={() => router.push('/dashboard')}
+                    onClick={() => router.push('/app')}
                     className="bg-blue-600 hover:bg-blue-700 px-8 rounded-full h-12 text-base"
                   >
                     Generate a New Path
@@ -112,7 +112,7 @@ export default function PathsPage() {
           {paths.length > 0 && (
             <div className="mt-6 text-center">
               <Button 
-                onClick={() => router.push('/dashboard')}
+                onClick={() => router.push('/app')}
                 variant="outline"
                 className="px-8 rounded-full h-12 text-base"
               >

@@ -14,7 +14,7 @@ const RedirectPage = () => {
       const hasCompletedSurveyLocal = localStorage.getItem("surveyCompleted");
       
       if (hasCompletedSurveyLocal === "true") {
-        router.push("/dashboard");
+        router.push("/app");
         return;
       }
       
@@ -30,7 +30,7 @@ const RedirectPage = () => {
         if (data.hasCompletedSurvey) {
           // Update localStorage for faster checks next time
           localStorage.setItem("surveyCompleted", "true");
-          router.push("/dashboard");
+          router.push("/app");
         } else {
           // If survey not completed, redirect to the survey page
           router.push("/survey");
