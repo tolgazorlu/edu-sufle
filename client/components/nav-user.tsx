@@ -1,5 +1,6 @@
 "use client"
 
+import { useRouter } from "next/navigation"
 import {
   BellIcon,
   CreditCardIcon,
@@ -36,9 +37,24 @@ export function NavUser({
     name: string
     email: string
     avatar: string
+    opencampus?: {
+      id: string
+      role: string
+      department: string
+      joinDate: string
+      status: string
+    }
   }
 }) {
   const { isMobile } = useSidebar()
+  const router = useRouter()
+  
+  const handleLogout = () => {
+    // Clear localStorage
+    localStorage.clear()
+    // Redirect to login page or home page
+    router.push("/")
+  }
 
   return (
     <SidebarMenu>
@@ -58,6 +74,11 @@ export function NavUser({
                 <span className="truncate text-xs text-muted-foreground">
                   {user.email}
                 </span>
+                {user.opencampus && (
+                  <span className="truncate text-xs text-muted-foreground">
+                    {user.opencampus.role}
+                  </span>
+                )}
               </div>
               <MoreVerticalIcon className="ml-auto size-4" />
             </SidebarMenuButton>
@@ -79,6 +100,11 @@ export function NavUser({
                   <span className="truncate text-xs text-muted-foreground">
                     {user.email}
                   </span>
+                  {user.opencampus && (
+                    <span className="truncate text-xs text-muted-foreground mt-1">
+                      {user.opencampus.role} • {user.opencampus.department}
+                    </span>
+                  )}
                 </div>
               </div>
             </DropdownMenuLabel>
@@ -96,9 +122,27 @@ export function NavUser({
                 <BellIcon />
                 Notifications
               </DropdownMenuItem>
+              {user.opencampus && (
+                <DropdownMenuItem>
+                  <div className="flex flex-col w-full">
+                    <div className="flex items-center justify-between w-full">
+                      <span>OpenCampus ID</span>
+                      <span className="text-xs font-medium">{user.opencampus.id}</span>
+                    </div>
+                    <div className="flex items-center justify-between w-full mt-1">
+                      <span>Status</span>
+                      <span className="text-xs font-medium">{user.opencampus.status}</span>
+                    </div>
+                    <div className="flex items-center justify-between w-full mt-1">
+                      <span>Join Date</span>
+                      <span className="text-xs font-medium">{user.opencampus.joinDate}</span>
+                    </div>
+                  </div>
+                </DropdownMenuItem>
+              )}
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={handleLogout}>
               <LogOutIcon />
               Log out
             </DropdownMenuItem>

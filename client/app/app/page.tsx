@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import Web3 from "web3"
 import SufleABI from "@/constants/abis/Sufle.json"
 import { MetaMaskConnect } from "@/components/MetaMaskConnect";
-import { createPath, createTask, updateTaskStatus } from '@/lib/contractUtils';
+import { createPath, createTask, updateTaskStatus, isTaskCompleted, completePath } from '@/lib/contractUtils';
 import { useRouter } from 'next/navigation';
 
 interface Task {
@@ -33,6 +33,7 @@ interface GeneratedPathInfo {
   taskCount: number;
   transactionHash: string | null;
   tasks: Task[];
+  pathId?: string; // Add pathId property
 }
 
 function AppContent() {
@@ -45,7 +46,8 @@ function AppContent() {
     description: "",
     taskCount: 0,
     tasks: [],
-    transactionHash: null
+    transactionHash: null,
+    pathId: '0' // Initialize with a default path ID
   });
   const [showGeneratedPath, setShowGeneratedPath] = useState(false);
   const [accountBalance, setAccountBalance] = useState("0");
@@ -167,7 +169,7 @@ function AppContent() {
       const accounts = await web3.eth.getAccounts();
       
      
-      const contractAddress = "0x5ae3C1C707492e9d319953A2c3bE0cb651C38fC8";
+      const contractAddress = "0x53D34f50678ff5c47BB649F73E4cb338eFed83d7";
       const contractABI = SufleABI;
       
       const eduTokenContract = new web3.eth.Contract(contractABI, contractAddress);
@@ -240,12 +242,24 @@ function AppContent() {
         };
       }
       
+      // Extract the path ID from the transaction events if available
+      let pathId = '0';
+      if (transaction.events && transaction.events.AIPathGenerated) {
+        // Safely extract the pathId and convert to string
+        const eventPathId = transaction.events.AIPathGenerated.returnValues?.pathId;
+        if (eventPathId !== undefined) {
+          pathId = String(eventPathId);
+          console.log("Extracted pathId from event:", pathId);
+        }
+      }
+      
       setGeneratedPathInfo({
         title: pathData.title || `AI Generated Path (${new Date().toLocaleDateString()})`,
         description: pathData.description || pathDescription,
         taskCount: pathData.tasks?.length || 0,
         tasks: pathData.tasks || [],
-        transactionHash: transaction.transactionHash 
+        transactionHash: transaction.transactionHash,
+        pathId: pathId // Store the path ID separately
       });
       
       setPathDialog(false);
@@ -779,7 +793,15 @@ function AppContent() {
                                     });
                                   }
                                   
-                                  const txHash = await updateTaskStatus(connectedAddress, taskId, 'completed');
+                                  // Use the updated function with pathId parameter
+                                  // For debugging purposes
+                                  console.log("Generated Path Info:", generatedPathInfo);
+                                  
+                                  // Get the path ID from the generatedPathInfo
+                                  const pathId = generatedPathInfo.pathId || '0';
+                                  console.log("Using pathId:", pathId);
+                                  
+                                  const txHash = await updateTaskStatus(connectedAddress, taskId, 'completed', pathId);
                                   
                                   if (txHash) {
                                     // Update the task in the state
@@ -800,6 +822,30 @@ function AppContent() {
                                       });
                                       
                                       toast.success("Task marked as completed!");
+                                      
+                                      // Check if all tasks are completed
+                                      const allTasksCompleted = updatedTasks.every(t => t.status === 'completed');
+                                      
+                                      if (allTasksCompleted) {
+                                        try {
+                                          // Get all task IDs
+                                          const taskIds = updatedTasks.map(t => t.id || 0);
+                                          console.log("All tasks completed, task IDs:", taskIds);
+                                          
+                                          // Make sure we're using the same pathId for consistency
+                                          console.log("Completing path with pathId:", pathId);
+                                          
+                                          // Call completePath function to get the reward
+                                          const completePathTxHash = await completePath(connectedAddress, pathId, taskIds);
+                                          
+                                          if (completePathTxHash) {
+                                            toast.success("Congratulations! You've completed all tasks and earned 0.01 EDU tokens!");
+                                          }
+                                        } catch (completePathError: any) {
+                                          console.error("Error completing path:", completePathError);
+                                          toast.error(completePathError.message || "Failed to complete path and get reward");
+                                        }
+                                      }
                                     }
                                   }
                                 } catch (error: any) {

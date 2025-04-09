@@ -12,7 +12,7 @@ export async function POST(request: Request) {
       Create a personalized learning path with the following information:
       1. A meaningful title for the learning path
       2. A detailed description of what this path will help the user achieve
-      3. Create 3-5 specific tasks that will help achieve these objectives.
+      3. Create 5-10 specific tasks that will help achieve these objectives.
       
       Each task should have:
       - A title

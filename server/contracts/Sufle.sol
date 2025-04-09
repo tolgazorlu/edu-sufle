@@ -38,6 +38,7 @@ contract Sufle {
         string description;
         string title;
         uint256 timestamp;
+        bool completed;
     }
 
     mapping(uint256 => Task) public tasks;
@@ -46,6 +47,7 @@ contract Sufle {
     mapping(address => uint256[]) public userSurveys;
     mapping(uint256 => GeneratedAIPath) public generatedAIPaths;
     mapping(address => uint256[]) public userGeneratedPaths;
+    mapping(uint256 => mapping(uint256 => bool)) public completedTasks; // pathId => taskId => completed
 
     event TaskCreated(uint256 taskId, string title, string description, string priority, string status, string tags);
     event PathCreated(uint256 pathId, string title, string description);
@@ -53,6 +55,9 @@ contract Sufle {
     event SurveyCreated(uint256 surveyId, address indexed userAddress);
     event SurveyUpdated(uint256 surveyId, address indexed userAddress);
     event AIPathGenerated(uint256 pathId, address indexed creator, string description);
+    event TaskCompleted(uint256 pathId, uint256 taskId, address indexed user);
+    event PathCompleted(uint256 pathId, address indexed user);
+    event RewardSent(address indexed user, uint256 amount);
 
     constructor() {
         owner = msg.sender;
@@ -122,7 +127,8 @@ contract Sufle {
             creator: msg.sender,
             description: _description,
             title: "",  // Title will be set later by backend AI system
-            timestamp: block.timestamp
+            timestamp: block.timestamp,
+            completed: false
         });
         
         // Add to user's list of generated paths
@@ -160,7 +166,8 @@ contract Sufle {
         address creator,
         string memory description,
         string memory title,
-        uint256 timestamp
+        uint256 timestamp,
+        bool completed
     ) {
         GeneratedAIPath storage path = generatedAIPaths[_pathId];
         return (
@@ -168,7 +175,8 @@ contract Sufle {
             path.creator,
             path.description,
             path.title,
-            path.timestamp
+            path.timestamp,
+            path.completed
         );
     }
     
@@ -186,6 +194,59 @@ contract Sufle {
      */
     function withdraw() public onlyOwner {
         payable(owner).transfer(address(this).balance);
+    }
+    
+    /**
+     * @dev Marks a task as completed for a specific path and user
+     * @param _pathId The ID of the path
+     * @param _taskId The ID of the task to mark as completed
+     */
+    function completeTask(uint256 _pathId, uint256 _taskId) public {
+        require(generatedAIPaths[_pathId].pathId != 0, "Path does not exist");
+        require(generatedAIPaths[_pathId].creator == msg.sender, "Only the path creator can complete tasks");
+        
+        // Mark the task as completed
+        completedTasks[_pathId][_taskId] = true;
+        
+        emit TaskCompleted(_pathId, _taskId, msg.sender);
+    }
+    
+    /**
+     * @dev Checks if a task is completed
+     * @param _pathId The ID of the path
+     * @param _taskId The ID of the task
+     * @return completed Whether the task is completed
+     */
+    function isTaskCompleted(uint256 _pathId, uint256 _taskId) public view returns (bool) {
+        return completedTasks[_pathId][_taskId];
+    }
+    
+    /**
+     * @dev Marks a path as completed and rewards the user
+     * @param _pathId The ID of the path to mark as completed
+     * @param _taskIds Array of task IDs in the path
+     */
+    function completePath(uint256 _pathId, uint256[] memory _taskIds) public {
+        require(generatedAIPaths[_pathId].pathId != 0, "Path does not exist");
+        require(generatedAIPaths[_pathId].creator == msg.sender, "Only the path creator can complete the path");
+        require(!generatedAIPaths[_pathId].completed, "Path already completed");
+        
+        // Check if all tasks are completed
+        for (uint256 i = 0; i < _taskIds.length; i++) {
+            require(completedTasks[_pathId][_taskIds[i]], "Not all tasks are completed");
+        }
+        
+        // Mark the path as completed
+        generatedAIPaths[_pathId].completed = true;
+        
+        // Send reward to the user (0.01 EDU token)
+        uint256 rewardAmount = 0.01 ether;
+        require(address(this).balance >= rewardAmount, "Contract does not have enough balance for reward");
+        
+        payable(msg.sender).transfer(rewardAmount);
+        
+        emit PathCompleted(_pathId, msg.sender);
+        emit RewardSent(msg.sender, rewardAmount);
     }
 
     function createUserSurvey(

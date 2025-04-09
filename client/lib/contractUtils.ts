@@ -23,6 +23,7 @@ export interface GeneratedPathInfo {
   description: string;
   title: string;
   timestamp: string;
+  completed: boolean;
 }
 
 // Interface for a path with all details
@@ -33,11 +34,12 @@ export interface PathWithTasks {
   creator: string;
   timestamp: number;
   tasks: Task[];
+  completed: boolean;
   transactionHash?: string;
 }
 
 // Replace with your contract address
-const CONTRACT_ADDRESS = "0x5ae3C1C707492e9d319953A2c3bE0cb651C38fC8";
+const CONTRACT_ADDRESS = "0x53D34f50678ff5c47BB649F73E4cb338eFed83d7";
 
 export async function createTask(
   address: string, 
@@ -181,6 +183,7 @@ export async function getUserPaths(address: string): Promise<PathWithTasks[]> {
           description: pathData.description || '',
           creator: pathData.creator || '',
           timestamp: Number(pathData.timestamp || 0) * 1000,
+          completed: pathData.completed || false,
           tasks: tasks
         });
       } catch (pathError) {
@@ -238,6 +241,7 @@ export async function getPathDetails(pathId: number): Promise<PathWithTasks | nu
       description: pathData.description || '',
       creator: pathData.creator || '',
       timestamp: Number(pathData.timestamp || 0) * 1000,
+      completed: pathData.completed || false,
       tasks: tasks
     };
   } catch (error) {
@@ -251,7 +255,8 @@ export async function getPathDetails(pathId: number): Promise<PathWithTasks | nu
 export async function updateTaskStatus(
   address: string,
   taskId: number | string,
-  newStatus: string
+  newStatus: string,
+  pathId?: number | string
 ): Promise<string | null> {
   if (!window.ethereum) {
     toast.error("Please install MetaMask to use this feature");
@@ -262,10 +267,21 @@ export async function updateTaskStatus(
     const web3 = new Web3(window.ethereum);
     const contract = new web3.eth.Contract(SufleABI as any, CONTRACT_ADDRESS);
 
-    const result = await contract.methods.updateTaskStatus(
-      taskId,
-      newStatus
-    ).send({ from: address });
+    let result;
+    
+    if (newStatus === 'completed' && pathId) {
+      // Use the new completeTask function if we're marking a task as completed
+      result = await contract.methods.completeTask(
+        pathId,
+        taskId
+      ).send({ from: address });
+    } else {
+      // Fall back to the old method if needed
+      result = await contract.methods.updateTaskStatus(
+        taskId,
+        newStatus
+      ).send({ from: address });
+    }
 
     return result.transactionHash;
   } catch (error) {
@@ -310,5 +326,60 @@ async function fetchTasksForGeneratedPath(pathId: number | string, web3: any, co
   } catch (error) {
     console.error("Error fetching tasks for path:", error);
     return [];
+  }
+}
+
+// Function to check if a task is completed
+export async function isTaskCompleted(
+  address: string,
+  pathId: number | string,
+  taskId: number | string
+): Promise<boolean> {
+  if (!window.ethereum) {
+    toast.error("Please install MetaMask to use this feature");
+    return false;
+  }
+
+  try {
+    const web3 = new Web3(window.ethereum);
+    const contract = new web3.eth.Contract(SufleABI as any, CONTRACT_ADDRESS);
+
+    const completed = await contract.methods.isTaskCompleted(
+      pathId,
+      taskId
+    ).call({ from: address });
+
+    return Boolean(completed);
+  } catch (error) {
+    console.error("Error checking task completion status:", error);
+    return false;
+  }
+}
+
+// Function to complete a path and get reward
+export async function completePath(
+  address: string,
+  pathId: number | string,
+  taskIds: (number | string)[]
+): Promise<string | null> {
+  if (!window.ethereum) {
+    toast.error("Please install MetaMask to use this feature");
+    return null;
+  }
+
+  try {
+    const web3 = new Web3(window.ethereum);
+    const contract = new web3.eth.Contract(SufleABI as any, CONTRACT_ADDRESS);
+
+    const result = await contract.methods.completePath(
+      pathId,
+      taskIds
+    ).send({ from: address });
+
+    return result.transactionHash;
+  } catch (error) {
+    console.error("Error completing path:", error);
+    toast.error("Failed to complete path and get reward");
+    return null;
   }
 }
