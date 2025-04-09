@@ -589,7 +589,7 @@ function AppContent() {
                     </Button>
                   </div>
                   <div className="bg-gradient-to-br from-blue-600 to-indigo-600 md:w-72 p-6 flex flex-col justify-center text-white">
-                    <h3 className="text-lg font-bold mb-3">What you'll get:</h3>
+                    <h3 className="text-lg font-bold mb-3">What you&apos;ll get:</h3>
                     <ul className="space-y-2 text-sm">
                       <li className="flex items-center">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-blue-200" viewBox="0 0 20 20" fill="currentColor">

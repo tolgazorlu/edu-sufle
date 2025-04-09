@@ -7,7 +7,7 @@
     "educhain",
     "opencampus"
   ],
-  "author": "Asharib Ali",
+  "author": "Tolga Zorlu",
   "license": "MIT",
   "scripts": {
     "dev": "next dev --turbo",

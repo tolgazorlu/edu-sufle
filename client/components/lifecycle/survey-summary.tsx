@@ -11,7 +11,7 @@ export default function SurveySummary({ data }: SurveySummaryProps) {
       <div className="space-y-2">
         <h2 className="text-2xl font-bold text-center">Review Your Information</h2>
         <p className="text-muted-foreground text-center">
-          Please review the information you've provided before submitting.
+          Please review the information you&apos;ve provided before submitting.
         </p>
       </div>
 
@@ -56,7 +56,7 @@ export default function SurveySummary({ data }: SurveySummaryProps) {
 
         <div className="text-center pt-4">
           <p className="text-sm text-muted-foreground">
-            By submitting this information, you'll help us create a personalized learning roadmap tailored to your goals
+            By submitting this information, you&apos;ll help us create a personalized learning roadmap tailored to your goals
             and interests. You can always update your preferences later.
           </p>
         </div>

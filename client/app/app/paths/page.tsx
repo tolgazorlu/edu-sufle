@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button"
 import { AppSidebar } from "@/components/app-sidebar"
 import { SiteHeader } from "@/components/site-header"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
-import { getUserPaths } from "@/lib/contractUtils"
 import { MetaMaskConnect } from "@/components/MetaMaskConnect"
 
 interface Task {
@@ -45,20 +44,10 @@ export default function PathsPage() {
   const fetchUserPaths = async () => {
     setLoading(true)
     try {
-      const userPaths = await getUserPaths(connectedAddress)
+  
 
-      console.log("Fetched paths:", userPaths)
       
-      // Ensure paths have the required structure
-      const formattedPaths = userPaths.map(path => ({
-        ...path,
-        tasks: path.tasks || [],
-        title: path.title || `Path #${path.id.substring(0, 8)}`,
-        description: path.description || 'No description available',
-        timestamp: path.timestamp || Date.now()
-      }))
-      
-      setPaths(formattedPaths)
+      setPaths([])
     } catch (error) {
       console.error("Error fetching paths:", error)
       toast.error("Failed to fetch your paths")
@@ -98,7 +87,7 @@ export default function PathsPage() {
             <>
               {paths.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-64 gap-4">
-                  <p className="text-lg text-muted-foreground">You don't have any learning paths yet.</p>
+                  <p className="text-lg text-muted-foreground">You don&apos;t have any learning paths yet.</p>
                   <Button 
                     onClick={() => router.push('/app')}
                     className="px-8 rounded-full h-12 text-base"

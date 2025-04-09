@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import Web3 from "web3";
 import { toast } from "@/components/ui/use-toast";
@@ -26,57 +26,32 @@ export const MetaMaskConnect: React.FC<MetaMaskConnectProps> = ({
   const [balance, setBalance] = useState<string>("0");
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState<boolean>(false);
 
-  useEffect(() => {
-    // Check localStorage for existing connection
-    const storedAddress = localStorage.getItem("walletAddress");
-    if (storedAddress) {
-      checkConnection(storedAddress);
-    }
+  const handleDisconnect = useCallback(() => {
+    setAccountAddress(undefined);
+    setIsConnected(false);
+    localStorage.removeItem("walletAddress");
+    onDisconnect?.();
+  }, [onDisconnect]);
 
-    // Add event listeners for account and network changes
-    if (window.ethereum) {
-      window.ethereum.on("accountsChanged", handleAccountsChanged);
-      window.ethereum.on("chainChanged", handleChainChanged);
-    }
-
-    return () => {
-      if (window.ethereum) {
-        window.ethereum.removeListener(
-          "accountsChanged",
-          handleAccountsChanged
-        );
-        window.ethereum.removeListener("chainChanged", handleChainChanged);
-      }
-    };
-  }, []);
-
-  useEffect(() => {
-    if (isConnected && accountAddress) {
-      checkEduTokenBalance();
-    }
-  }, [isConnected, accountAddress]);
-
-  const checkEduTokenBalance = async () => {
+  const checkEduTokenBalance = useCallback(async () => {
     if (!window.ethereum || !accountAddress) return;
     
     try {
-      // For the native EDU token on Open Campus Codex
       const web3 = new Web3(window.ethereum);
       const balance = await web3.eth.getBalance(accountAddress);
       const eduBalance = web3.utils.fromWei(balance, 'ether');
       const formattedBalance = parseFloat(eduBalance).toFixed(4);
       setBalance(formattedBalance);
       
-      // Call the onBalanceUpdate prop if provided
       if (onBalanceUpdate) {
         onBalanceUpdate(formattedBalance);
       }
     } catch (error) {
       console.error("Error fetching EDU balance:", error);
     }
-  };
+  }, [accountAddress, onBalanceUpdate]);
 
-  const checkConnection = async (storedAddress: string) => {
+  const checkConnection = useCallback(async (storedAddress: string) => {
     if (typeof window.ethereum !== "undefined") {
       try {
         const accounts = await window.ethereum.request({
@@ -104,7 +79,51 @@ export const MetaMaskConnect: React.FC<MetaMaskConnectProps> = ({
         handleDisconnect();
       }
     }
-  };
+  }, [onConnect, handleDisconnect]);
+
+  const handleAccountsChanged = useCallback((accounts: string[]) => {
+    if (accounts.length === 0) {
+      handleDisconnect();
+    } else {
+      setAccountAddress(accounts[0]);
+      setIsConnected(true);
+      onConnect?.(accounts[0]);
+    }
+  }, [onConnect, handleDisconnect]);
+
+  const handleChainChanged = useCallback(async (chainId: string) => {
+    if (chainId !== OPEN_CAMPUS_CHAIN_ID) {
+      await switchToOpenCampusNetwork();
+    }
+  }, [handleDisconnect]);
+
+  useEffect(() => {
+    const storedAddress = localStorage.getItem("walletAddress");
+    if (storedAddress) {
+      checkConnection(storedAddress);
+    }
+
+    if (window.ethereum) {
+      window.ethereum.on("accountsChanged", handleAccountsChanged);
+      window.ethereum.on("chainChanged", handleChainChanged);
+    }
+
+    return () => {
+      if (window.ethereum) {
+        window.ethereum.removeListener(
+          "accountsChanged",
+          handleAccountsChanged
+        );
+        window.ethereum.removeListener("chainChanged", handleChainChanged);
+      }
+    };
+  }, [checkConnection, handleAccountsChanged, handleChainChanged]);
+
+  useEffect(() => {
+    if (isConnected && accountAddress) {
+      checkEduTokenBalance();
+    }
+  }, [isConnected, accountAddress, checkEduTokenBalance]);
 
   const switchToOpenCampusNetwork = async () => {
     if (typeof window.ethereum !== "undefined") {
@@ -155,42 +174,6 @@ export const MetaMaskConnect: React.FC<MetaMaskConnectProps> = ({
         }
       }
     }
-  };
-
-  const handleAccountsChanged = (accounts: string[]) => {
-    if (accounts.length === 0) {
-      handleDisconnect();
-    } else if (accounts[0] !== accountAddress) {
-      setAccountAddress(accounts[0]);
-      setIsConnected(true);
-      localStorage.setItem("walletAddress", accounts[0]);
-      onConnect?.(accounts[0]);
-      toast({
-        title: "Account Changed",
-        description: `Connected to ${accounts[0].slice(
-          0,
-          6
-        )}...${accounts[0].slice(-4)}`,
-      });
-    }
-  };
-
-  const handleChainChanged = async (chainId: string) => {
-    if (chainId !== OPEN_CAMPUS_CHAIN_ID) {
-      toast({
-        variant: "destructive",
-        title: "Network Error",
-        description: "Please connect to Open Campus Codex network",
-      });
-      await switchToOpenCampusNetwork();
-    }
-  };
-
-  const handleDisconnect = () => {
-    setIsConnected(false);
-    setAccountAddress(undefined);
-    localStorage.removeItem("walletAddress");
-    onDisconnect?.();
   };
 
   const connectWallet = async () => {

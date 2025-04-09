@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Task } from '@/lib/contractUtils';
+import { ITask } from '@/lib/contractUtils';
 import Web3 from 'web3';
 import { SUFLE_ABI, SUFLE_CONTRACT_ADDRESS } from '@/lib/contracts';
 import { formatDistanceToNow } from 'date-fns';
@@ -29,7 +29,7 @@ interface PathData {
   description: string;
   creator: string;
   timestamp: number;
-  tasks: Task[];
+  tasks: ITask[];
   likes: number;
   liked: boolean;
   comments: Comment[];
@@ -538,7 +538,7 @@ export default function PathFeed() {
                   {/* Add comment form */}
                   <div className="flex items-center space-x-2">
                     <Input
-                      ref={el => commentInputRefs.current[path.id] = el}
+                      ref={el => { commentInputRefs.current[path.id] = el }}
                       value={newComments[path.id] || ''}
                       onChange={(e) => handleCommentChange(path.id, e.target.value)}
                       placeholder="Add a comment..."

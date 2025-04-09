@@ -221,6 +221,23 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     }
   }, [authState, authState?.idToken]);
   
+  useEffect(() => {
+    if (authState?.idToken) {
+      const storedUserData = localStorage.getItem("userData");
+      if (storedUserData) {
+        try {
+          const parsedData = JSON.parse(storedUserData);
+          setUserData(prevData => ({
+            ...prevData,
+            ...parsedData
+          }));
+        } catch (e) {
+          console.error("Error parsing stored user data:", e);
+        }
+      }
+    }
+  }, [authState, authState?.idToken]);
+  
   return (
     <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader>

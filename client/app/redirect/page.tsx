@@ -7,15 +7,15 @@ const RedirectPage = () => {
   const router = useRouter();
   const { authState, ocAuth } = useOCAuth();
 
-  const loginSuccess = () => {
-    router.push("/app");
-  };
-
-  const loginError = () => {
-    router.push("/"); 
-  };
-
   useEffect(() => {
+    const loginSuccess = () => {
+      router.push("/app");
+    };
+
+    const loginError = () => {
+      router.push("/"); 
+    };
+
     const handleAuth = async () => {
       try {
         await ocAuth.handleLoginRedirect();
@@ -26,7 +26,7 @@ const RedirectPage = () => {
     };
 
     handleAuth();
-  }, [ocAuth]);
+  }, [ocAuth, router]);
 
   if (authState.error) {
     return <div>Error Logging in: {authState.error.message}</div>;

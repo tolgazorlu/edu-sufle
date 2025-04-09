@@ -52,7 +52,7 @@ export default function CategoriesStep({ value, onChange }: CategoriesStepProps)
     <div className="space-y-4">
       <div className="space-y-2">
         <h2 className="text-2xl font-bold text-center">What categories interest you?</h2>
-        <p className="text-muted-foreground text-center">Select the areas you'd like to explore and learn about.</p>
+        <p className="text-muted-foreground text-center">Select the areas you&apos;d like to explore and learn about.</p>
       </div>
 
       <div className="space-y-4">

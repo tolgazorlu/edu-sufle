@@ -164,7 +164,7 @@ export default function Lifecycle() {
             <Card className="border-none shadow-lg">
               <CardHeader className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-t-lg">
                 <CardTitle className="text-center text-2xl">Welcome to Sufle Learning Journey</CardTitle>
-                <p className="text-center text-white/80">Let's personalize your educational roadmap</p>
+                <p className="text-center text-white/80">Let&apos;s personalize your educational roadmap</p>
               </CardHeader>
               <CardContent className="pt-6">
                 <SurveyProgress currentStep={currentStep} totalSteps={totalSteps} />
