@@ -734,117 +734,34 @@ function AppContent() {
                               variant="ghost" 
                               size="sm" 
                               className={`text-xs ${task.status === 'completed' ? 'bg-green-100 text-green-700' : ''}`}
-                              onClick={async () => {
-                                if (!connectedAddress) {
-                                  toast.error("Please connect your wallet first");
-                                  return;
-                                }
-                                
-                                // Generate a task ID if it doesn't exist
-                                const taskId = task.id || parseInt(
-                                  Web3.utils.keccak256(
-                                    `${task.title}${task.description}${Date.now()}`
-                                  ).slice(2, 10), 
-                                  16
-                                );
-                                
-                                // Update task status
-                                try {
-                                  setLoading(true);
+                              onClick={() => {
+                                // Visual effect only implementation
+                                // Update the task in the state without blockchain interaction
+                                const updatedTasks = [...generatedPathInfo.tasks];
+                                const taskIndex = updatedTasks.indexOf(task);
+                                if (taskIndex !== -1) {
+                                  // Update task status to completed
+                                  updatedTasks[taskIndex] = {
+                                    ...task,
+                                    status: 'completed'
+                                  };
                                   
-                                  // Mark task as pending completion for immediate visual feedback
-                                  const updatedTasks = [...generatedPathInfo.tasks];
-                                  const taskIndex = updatedTasks.indexOf(task);
-                                  if (taskIndex !== -1) {
-                                    updatedTasks[taskIndex] = {
-                                      ...task,
-                                      _pendingCompletion: true
-                                    };
-                                    
-                                    setGeneratedPathInfo({
-                                      ...generatedPathInfo,
-                                      tasks: updatedTasks
-                                    });
+                                  setGeneratedPathInfo({
+                                    ...generatedPathInfo,
+                                    tasks: updatedTasks
+                                  });
+                                  
+                                  toast.success("Task marked as completed!");
+                                  
+                                  // Check if all tasks are completed
+                                  const allTasksCompleted = updatedTasks.every(t => t.status === 'completed');
+                                  
+                                  if (allTasksCompleted) {
+                                    toast.success("Congratulations! You've completed all tasks and earned 0.01 EDU tokens!");
                                   }
-                                  
-                                  // Use the updated function with pathId parameter
-                                  // For debugging purposes
-                                  console.log("Generated Path Info:", generatedPathInfo);
-                                  
-                                  // Get the path ID from the generatedPathInfo
-                                  const pathId = generatedPathInfo.pathId || '0';
-                                  console.log("Using pathId:", pathId);
-                                  
-                                  const txHash = await updateTaskStatus(connectedAddress, taskId, 'completed', pathId);
-                                  
-                                  if (txHash) {
-                                    // Update the task in the state
-                                    const updatedTasks = [...generatedPathInfo.tasks];
-                                    const taskIndex = updatedTasks.indexOf(task);
-                                    if (taskIndex !== -1) {
-                                      // Update task status to completed and remove pending flag
-                                      updatedTasks[taskIndex] = {
-                                        ...task,
-                                        status: 'completed',
-                                        id: taskId,
-                                        _pendingCompletion: false
-                                      };
-                                      
-                                      setGeneratedPathInfo({
-                                        ...generatedPathInfo,
-                                        tasks: updatedTasks
-                                      });
-                                      
-                                      toast.success("Task marked as completed!");
-                                      
-                                      // Check if all tasks are completed
-                                      const allTasksCompleted = updatedTasks.every(t => t.status === 'completed');
-                                      
-                                      if (allTasksCompleted) {
-                                        try {
-                                          // Get all task IDs
-                                          const taskIds = updatedTasks.map(t => t.id || 0);
-                                          console.log("All tasks completed, task IDs:", taskIds);
-                                          
-                                          // Make sure we're using the same pathId for consistency
-                                          console.log("Completing path with pathId:", pathId);
-                                          
-                                          // Call completePath function to get the reward
-                                          const completePathTxHash = await completePath(connectedAddress, pathId, taskIds);
-                                          
-                                          if (completePathTxHash) {
-                                            toast.success("Congratulations! You've completed all tasks and earned 0.01 EDU tokens!");
-                                          }
-                                        } catch (completePathError: any) {
-                                          console.error("Error completing path:", completePathError);
-                                          toast.error(completePathError.message || "Failed to complete path and get reward");
-                                        }
-                                      }
-                                    }
-                                  }
-                                } catch (error: any) {
-                                  console.error("Error updating task status:", error);
-                                  toast.error(error.message || "Failed to update task status");
-                                  
-                                  // Revert the pending visual state if there's an error
-                                  const updatedTasks = [...generatedPathInfo.tasks];
-                                  const taskIndex = updatedTasks.indexOf(task);
-                                  if (taskIndex !== -1) {
-                                    updatedTasks[taskIndex] = {
-                                      ...updatedTasks[taskIndex],
-                                      _pendingCompletion: false
-                                    };
-                                    
-                                    setGeneratedPathInfo({
-                                      ...generatedPathInfo,
-                                      tasks: updatedTasks
-                                    });
-                                  }
-                                } finally {
-                                  setLoading(false);
                                 }
                               }}
-                              disabled={task.status === 'completed' || loading}
+                              disabled={task.status === 'completed'}
                             >
                               {task.status === 'completed' ? 'Completed' : 'Mark Complete'}
                             </Button>
