@@ -9,32 +9,14 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import Web3 from "web3"
-import SufleABI from "@/constants/abis/Sufle.json"
 import { MetaMaskConnect } from "@/components/MetaMaskConnect";
-import { createPath, createTask, updateTaskStatus, isTaskCompleted, completePath } from '@/lib/contractUtils';
+import { createPath, createTask, updateTaskStatus, completePath } from '@/lib/contractUtils';
 import { useRouter } from 'next/navigation';
-
-interface Task {
-  title: string;
-  description: string;
-  priority: string;
-  status: string;
-  tags: string;
-  id?: number | string;
-  _pendingCompletion?: boolean; // Track tasks that are in the process of being completed
-}
-
-interface GeneratedPathInfo {
-  title: string;
-  description: string;
-  taskCount: number;
-  transactionHash: string | null;
-  tasks: Task[];
-  pathId?: string; // Add pathId property
-}
+import { SUFLE_ABI, SUFLE_CONTRACT_ADDRESS } from '@/lib/contracts';
+import { GeneratedPathInfo, ITask } from '@/lib/contractUtils';
 
 function AppContent() {
   const [connectedAddress, setConnectedAddress] = useState("");
@@ -47,7 +29,7 @@ function AppContent() {
     taskCount: 0,
     tasks: [],
     transactionHash: null,
-    pathId: '0' // Initialize with a default path ID
+    pathId: '0' 
   });
   const [showGeneratedPath, setShowGeneratedPath] = useState(false);
   const [accountBalance, setAccountBalance] = useState("0");
@@ -64,20 +46,16 @@ function AppContent() {
     setConnectedAddress(address);
   };
 
-  // Check if user has completed a survey
   useEffect(() => {
     const checkSurveyStatus = async () => {
       if (connectedAddress) {
         try {
-          // Initialize Web3 instance
           const web3 = new Web3(window.ethereum);
-          const contractAddress = "0xABBB62c5801e8f0f1a8b31FFECd36673B760c490";
-          const contract = new web3.eth.Contract(SufleABI, contractAddress);
+          const contractAddress = SUFLE_CONTRACT_ADDRESS;
+          const contract = new web3.eth.Contract(SUFLE_ABI, contractAddress);
           
-          // Get user survey count from the contract
           const surveyCount = await contract.methods.getUserSurveyCount(connectedAddress).call();
           
-          // If user has no surveys, redirect to lifecycle page
           if (String(surveyCount) === "0") {
             toast.info("Please complete the survey to continue");
             router.push('/app/lifecycle');
@@ -98,7 +76,7 @@ function AppContent() {
         try {
           console.log("Fetching survey data for address:", connectedAddress);
           const web3 = new Web3(window.ethereum);
-          const contract = new web3.eth.Contract(SufleABI, "0xABBB62c5801e8f0f1a8b31FFECd36673B760c490");
+          const contract = new web3.eth.Contract(SUFLE_ABI, SUFLE_CONTRACT_ADDRESS);
           
           const surveyCount = Number(await contract.methods.getUserSurveyCount(connectedAddress).call());
           console.log("Survey count:", surveyCount);
@@ -168,11 +146,7 @@ function AppContent() {
       await window.ethereum.request({ method: "eth_requestAccounts" });
       const accounts = await web3.eth.getAccounts();
       
-     
-      const contractAddress = "0x53D34f50678ff5c47BB649F73E4cb338eFed83d7";
-      const contractABI = SufleABI;
-      
-      const eduTokenContract = new web3.eth.Contract(contractABI, contractAddress);
+      const eduTokenContract = new web3.eth.Contract(SUFLE_ABI, SUFLE_CONTRACT_ADDRESS);
       
       const gasPrice = await web3.eth.getGasPrice();
       const estimatedGas = await eduTokenContract.methods
@@ -717,7 +691,7 @@ function AppContent() {
                     </div>
                     
                     <div className="space-y-4">
-                      {generatedPathInfo.tasks.map((task: Task, idx: number) => {
+                      {generatedPathInfo.tasks.map((task: ITask, idx: number) => {
                         // Add a local state variable to track pending completion status
                         const isPendingCompletion = loading && task.status !== 'completed' && task._pendingCompletion;
                         
