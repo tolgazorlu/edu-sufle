@@ -28,7 +28,7 @@ const RedirectPage = () => {
     handleAuth();
   }, [ocAuth, router]);
 
-  if (authState.error) {
+  if (authState?.error) {
     return <div>Error Logging in: {authState.error.message}</div>;
   }
 

@@ -67,7 +67,7 @@ const RedirectPage = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ocAuth]);
 
-  if (authState.error) {
+  if (authState?.error) {
     return <div>Error Logging in: {authState.error.message}</div>;
   }
 
