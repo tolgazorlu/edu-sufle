@@ -8,8 +8,7 @@ interface OCIDProviderProps {
 }
 
 const opts = {
-  redirectUri: "https://edu-sufle.vercel.app/redirect",
-  
+  redirectUri: "https://sufle.xyz/redirect",
   referralCode: "PARTNER6",
 };
 
