@@ -8,7 +8,7 @@ interface OCIDProviderProps {
 }
 
 const opts = {
-  redirectUri: "https://sufle.xyz/redirect",
+  redirectUri: "http://localhost:3000/redirect",
   referralCode: "PARTNER6",
 };
 

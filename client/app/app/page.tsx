@@ -330,6 +330,168 @@ function AppContent() {
     }
   };
 
+  const handleGoToMindmap = () => {
+    if (!generatedPathInfo || !generatedPathInfo.tasks || generatedPathInfo.tasks.length === 0) {
+      toast.error("No tasks available for the mindmap");
+      return;
+    }
+    
+    try {
+      // Define extended task type with properties for node processing
+      interface ExtendedTask extends ITask {
+        _nodeId?: string;
+        _tags?: string[];
+      }
+      
+      // Group tasks by priority for better organization
+      const tasksByPriority: Record<string, ExtendedTask[]> = {};
+      generatedPathInfo.tasks.forEach(task => {
+        const priority = (task.priority || 'medium').toLowerCase();
+        if (!tasksByPriority[priority]) {
+          tasksByPriority[priority] = [];
+        }
+        tasksByPriority[priority].push(task as ExtendedTask);
+      });
+      
+      // Prepare nodes data with horizontal flow layout (left to right)
+      const nodes: any[] = [];
+      const edges: any[] = [];
+      
+      // Define node spacing
+      const HORIZONTAL_SPACING = 300;
+      const VERTICAL_SPACING = 100;
+      const LEFT_MARGIN = 100;
+      const TOP_MARGIN = 150;
+      
+      // Add main topic node at the left side
+      nodes.push({
+        id: 'main',
+        data: { label: generatedPathInfo.title },
+        position: { x: LEFT_MARGIN, y: 300 },
+        type: 'input'
+      });
+      
+      // Process each priority level as a column
+      const priorityOrder = ['critical', 'high', 'medium', 'low'];
+      let columnIndex = 1; // Start with column 1 (main node is at column 0)
+      
+      priorityOrder.forEach(priority => {
+        const tasks = tasksByPriority[priority] || [];
+        if (tasks.length === 0) return;
+        
+        // Calculate vertical positioning for this column
+        const columnX = LEFT_MARGIN + (columnIndex * HORIZONTAL_SPACING);
+        const totalHeight = tasks.length * VERTICAL_SPACING;
+        const startY = Math.max(100, 300 - (totalHeight / 2));
+        
+        // Add a priority header node
+        const headerNodeId = `header-${priority}`;
+        nodes.push({
+          id: headerNodeId,
+          data: { 
+            label: priority.charAt(0).toUpperCase() + priority.slice(1) + " Tasks",
+            isMainNode: true
+          },
+          position: { x: columnX, y: TOP_MARGIN },
+          type: 'default'
+        });
+        
+        // Connect main node to the priority header
+        edges.push({
+          id: `e-main-${headerNodeId}`,
+          source: 'main',
+          target: headerNodeId,
+          label: priority,
+          type: 'smoothstep'
+        });
+        
+        // Create nodes for each task in this priority group
+        tasks.forEach((task, taskIndex) => {
+          const nodeId = `${priority}-${taskIndex}`;
+          const nodeY = startY + (taskIndex * VERTICAL_SPACING);
+          
+          // Create task node
+          nodes.push({
+            id: nodeId,
+            data: { label: task.title },
+            position: { x: columnX, y: nodeY },
+            type: 'default'
+          });
+          
+          // Connect priority header to the task node
+          edges.push({
+            id: `e-${headerNodeId}-${nodeId}`,
+            source: headerNodeId,
+            target: nodeId,
+            type: 'default'
+          });
+          
+          // Keep track of tags for later connections
+          if (task.tags) {
+            const tags = task.tags.split(',').map(tag => tag.trim());
+            const extendedTask = task as ExtendedTask;
+            extendedTask._nodeId = nodeId; // Store node ID reference
+            extendedTask._tags = tags;
+          }
+        });
+        
+        columnIndex++;
+      });
+      
+      // Create connections between nodes that share the same tags
+      // Group tasks by tag
+      const tasksByTag: Record<string, string[]> = {};
+      (generatedPathInfo.tasks as ExtendedTask[]).forEach(task => {
+        if (task._tags && task._nodeId) {
+          task._tags.forEach(tag => {
+            if (!tasksByTag[tag]) tasksByTag[tag] = [];
+            tasksByTag[tag].push(task._nodeId as string);
+          });
+        }
+      });
+      
+      // Create edges between tasks with the same tag
+      Object.entries(tasksByTag).forEach(([tag, nodeIds]) => {
+        if (nodeIds.length > 1) {
+          // Only connect nodes if there's more than one with the same tag
+          for (let i = 0; i < nodeIds.length - 1; i++) {
+            const source = nodeIds[i];
+            const target = nodeIds[i + 1];
+            
+            // Avoid duplicate connections
+            const existingEdge = edges.find(e => 
+              (e.source === source && e.target === target) || 
+              (e.source === target && e.target === source)
+            );
+            
+            if (!existingEdge) {
+              edges.push({
+                id: `e-tag-${source}-${target}`,
+                source: source,
+                target: target,
+                label: tag,
+                type: 'straight',
+                animated: true,
+                style: { strokeDasharray: '5,5' } // Make these connections dashed
+              });
+            }
+          }
+        }
+      });
+      
+      // Save to localStorage
+      localStorage.setItem('mindmapData', JSON.stringify({ nodes, edges }));
+      
+      // Navigate to map page
+      router.push('/app/map');
+      
+      toast.success("Opening mindmap visualization");
+    } catch (error) {
+      console.error("Error preparing mindmap data:", error);
+      toast.error("Failed to prepare mindmap data");
+    }
+  };
+
   return (
     <SidebarProvider>
       <AppSidebar variant="inset" />
@@ -348,7 +510,7 @@ function AppContent() {
 
 
 {/* Product Info Card with Wallet Information */}
-<div className="mb-6">
+          <div className="mb-6">
             <Card className="shadow-lg overflow-hidden rounded-xl border border-emerald-100">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-0">
                 <div className="md:col-span-2 p-6 md:p-8">
@@ -775,7 +937,7 @@ function AppContent() {
                   <div className="flex justify-between mt-8">
                     <Button variant="outline">
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 101.414 1.414l-3 3a1 1 0 00-1.414 0l-3-3a1 1 0 000-1.414z" clipRule="evenodd" />
+                        <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 101.414-1.414l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 000 1.414z" clipRule="evenodd" />
                       </svg>
                       Export Path
                     </Button>
@@ -795,11 +957,23 @@ function AppContent() {
                       )}
                       <Button
                         variant="outline"
+                        className="border-purple-200 text-purple-700 hover:bg-purple-50 hover:text-purple-800"
+                        onClick={handleGoToMindmap}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M12 2a8 8 0 00-8 8c0 5.2 3.3 8 8 8v-4.5" />
+                          <path d="M12 2a8 8 0 018 8c0 5.2-3.3 8-8 8v-4.5" />
+                          <path d="M20 9H4" />
+                        </svg>
+                        Go to Mindmap
+                      </Button>
+                      <Button
+                        variant="outline"
                         className="border-red-200 text-red-700 hover:bg-red-50 hover:text-red-800"
                         onClick={() => setShowGeneratedPath(false)}
                       >
                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-6">
-  <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+  <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0 1 11.186 0Z" />
 </svg>
 
                         Remove
