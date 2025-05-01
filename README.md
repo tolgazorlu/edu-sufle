@@ -8,9 +8,9 @@
   <p align="center">
     <a href="https://sufle.xyz/"><strong>Go to SUFLE</strong></a>
     <br />
-    <a href="hhttps://github.com/tolgazorlu/edu-sufle/issues">Report Bug</a>
+    <a href="https://github.com/tolgazorlu/edu-sufle/issues">Report Bug</a>
     ·
-    <a href="hhttps://github.com/tolgazorlu/edu-sufle/issues">Request Feature</a>
+    <a href="https://github.com/tolgazorlu/edu-sufle/issues">Request Feature</a>
   </p>
 </div>
 
