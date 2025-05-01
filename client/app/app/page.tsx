@@ -481,7 +481,7 @@ function AppContent() {
       localStorage.setItem('mindmapData', JSON.stringify({ nodes, edges }));
 
       // Navigate to map page
-      router.push('/app/map');
+      router.push('/app/mindmap');
 
       toast.success("Opening mindmap visualization");
     } catch (error) {
