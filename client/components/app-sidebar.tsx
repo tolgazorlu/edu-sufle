@@ -17,8 +17,8 @@ import {
   Telescope,
   UserRoundPenIcon,
 } from "lucide-react"
+import Link from "next/link"
 
-import { NavMain } from "@/components/nav-main"
 import { NavSecondary } from "@/components/nav-secondary"
 import { NavUser } from "@/components/nav-user"
 import {
@@ -29,8 +29,11 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarGroup,
+  SidebarGroupContent,
 } from "@/components/ui/sidebar"
 import Image from "next/image"
+import { usePathname } from "next/navigation"
 
 // Default data structure
 const defaultData = {
@@ -63,11 +66,6 @@ const defaultData = {
       icon: BrainCircuit,
     },
     {
-      title: "Discover",
-      url: "/app/discover",
-      icon: Telescope,
-    },
-    {
       title: "Profile",
       url: "/app/profile",
       icon: UserRoundPenIcon,
@@ -76,6 +74,12 @@ const defaultData = {
       title: "Transactions",
       url: "/app/transactions",
       icon: ArrowLeftRightIcon,
+    },
+    {
+      title: "Discover (soon)",
+      url: "/app/discover",
+      icon: Telescope,
+      disabled: true,
     },
   ],
   navClouds: [
@@ -146,6 +150,64 @@ interface DecodedToken {
   email: string;
   name: string;
   [key: string]: any;
+}
+
+// This component has been removed to avoid duplication
+
+// Custom NavMain component for the sidebar with active link highlighting
+export function NavMain({
+  items
+}: {
+  items: {
+    title: string
+    url: string
+    icon?: React.ElementType
+    disabled?: boolean
+  }[]
+}) {
+  const pathname = usePathname();
+  
+  return (
+    <SidebarGroup>
+      <SidebarGroupContent className="flex flex-col gap-2">
+        <SidebarMenu>
+          {items.map((item) => {
+            const isActive = pathname === item.url;
+            const Icon = item.icon;
+            
+            return (
+              <SidebarMenuItem key={item.title}>
+                {item.disabled ? (
+                  <SidebarMenuButton 
+                    tooltip={item.title} 
+                    disabled 
+                    className="opacity-50 cursor-not-allowed"
+                  >
+                    <div className="flex items-center gap-2">
+                      {Icon && <Icon className="w-4 h-4" />}
+                      <span>{item.title}</span>
+                    </div>
+                  </SidebarMenuButton>
+                ) : (
+                  <Link href={item.url} passHref>
+                    <SidebarMenuButton 
+                      tooltip={item.title}
+                      className={isActive ? "bg-primary/10 font-medium" : ""}
+                    >
+                      <div className="flex items-center gap-2">
+                        {Icon && <Icon className={`w-4 h-4 ${isActive ? "text-primary" : ""}`} />}
+                        <span>{item.title}</span>
+                      </div>
+                    </SidebarMenuButton>
+                  </Link>
+                )}
+              </SidebarMenuItem>
+            );
+          })}
+        </SidebarMenu>
+      </SidebarGroupContent>
+    </SidebarGroup>
+  );
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
