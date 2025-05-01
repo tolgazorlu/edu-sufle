@@ -11,7 +11,7 @@
   
   <p><strong>Design personalized learning paths, create interactive mindmaps, and manage tasks - all powered by AI</strong></p>
   
-  <a href="https://sufle.app"><img src="https://img.shields.io/badge/Try%20Sufle-Get%20Started-brightgreen?style=for-the-badge" alt="Try Sufle" /></a>
+  <a href="https://sufle.xyz"><img src="https://img.shields.io/badge/Try%20Sufle-Get%20Started-brightgreen?style=for-the-badge" alt="Try Sufle" /></a>
 </div>
 
 ## 🌟 Overview
@@ -106,7 +106,7 @@ Sufle leverages cutting-edge AI to transform how you learn:
 ### For Users
 
 1. **Create an Account**
-   - Visit [sufle.app](https://sufle.app) and sign up
+   - Visit [sufle.xyz](https://sufle.xyz) and sign up
    - Complete your learning profile to get personalized recommendations
 
 2. **Create Your First Learning Path**
@@ -236,5 +236,5 @@ This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md
 <div align="center">
   <p>Made with ❤️ by the Sufle team</p>
   <p>Empowering lifelong learners through AI and blockchain technology</p>
-  <a href="https://sufle.app"><strong>sufle.app</strong></a>
+  <a href="https://sufle.xyz"><strong>sufle.xyz</strong></a>
 </div>
