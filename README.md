@@ -4,9 +4,9 @@
     <img style="border-radius: 10px" src="/sufle.png" alt="Logo" width="80" height="80">
   </a>
 
-  <h3 align="center">Sufle</h3>
+  <h3 align="center">SUFLE</h3>
   <p align="center">
-    <a href="https://sufle.xyz/"><strong>Go to Sufle</strong></a>
+    <a href="https://sufle.xyz/"><strong>Go to SUFLE</strong></a>
     <br />
     <a href="hhttps://github.com/tolgazorlu/edu-sufle/issues">Report Bug</a>
     ·
