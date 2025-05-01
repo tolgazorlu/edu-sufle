@@ -22,7 +22,31 @@
   ![Platform](https://img.shields.io/badge/platform-web-orange)
 </div>
 
-## 🌟 Overview
+<details>
+  <summary>Table of Contents</summary>
+  <ol>
+    <li>
+      <a href="#about-the-project">About The Project</a>
+      <ul>
+        <li><a href="#technologies">Technologies</a></li>
+        <li><a href="#features">Features</a></li>
+      </ul>
+    </li>
+    <li>
+      <a href="#getting-started">Getting Started</a>
+      <ul>
+        <li><a href="#prerequisites">Prerequisites</a></li>
+        <li><a href="#installation">Installation</a></li>
+      </ul>
+    </li>
+    <li><a href="#contributing">Contributing</a></li>
+    <li><a href="#license">License</a></li>
+    <li><a href="#contact">Contact</a></li>
+    <li><a href="#acknowledgments">Acknowledgments</a></li>
+  </ol>
+</details>
+
+## Introduction
 
 Sufle is a revolutionary AI-powered platform that empowers users to create personalized educational journeys tailored to their goals and interests. Using advanced AI technology, Sufle helps learners visualize their path through interactive mindmaps, break down complex topics into manageable tasks, and track progress - all in one seamless experience.
 
@@ -35,40 +59,7 @@ Sufle is a revolutionary AI-powered platform that empowers users to create perso
 - 🔄 **Adaptive Learning**: Receive personalized recommendations based on your progress and learning style
 - 👥 **Community Sharing**: Share your learning paths with others or discover paths created by experts
 
-## 🛠️ Technology Stack
-
-<table>
-  <tr>
-    <td><strong>🔗 Blockchain & Smart Contracts</strong></td>
-    <td>
-      • Solidity<br/>
-      • Hardhat<br/>
-      • ERC20 Token Standard
-    </td>
-  </tr>
-  <tr>
-    <td><strong>🖥️ Frontend</strong></td>
-    <td>
-      • Next.js<br/>
-      • TailwindCSS<br/>
-      • Shadcn UI<br/>
-      • React Flow
-    </td>
-  </tr>
-  <tr>
-    <td><strong>🤖 AI Integration</strong></td>
-    <td>
-      • Gemini API for task recommendations<br/>
-      • Custom AI models for learning analytics
-    </td>
-  </tr>
-</table>
-
 ## 🧠 How Sufle Works
-
-<div align="center">
-  <img src="https://raw.githubusercontent.com/tolgazorlu/sufle/main/assets/workflow.png" alt="Sufle Workflow" width="80%" />
-</div>
 
 ### 1️⃣ Create Your Learning Path
 - Input your learning goal or topic of interest
@@ -90,48 +81,24 @@ Sufle is a revolutionary AI-powered platform that empowers users to create perso
 - Celebrate milestones and achievements
 - Identify areas needing more attention
 
-## 💰 Token Economy
+## 🔄 Roadmap
 
-### 🪙 Edu
+### Q2 2025
+- 🚀 Mobile app launch
+- 🌐 API for third-party integrations
+- 🧩 Learning path templates marketplace
 
-The native ERC20 token powering our educational ecosystem:
+### Q3 2025
+- 👥 Group learning features
+- 🎓 Certification verification system
+- 🔄 Advanced progress analytics
 
-- **Premium Features:** Unlock advanced AI capabilities and customization options
-- **Creator Rewards:** Earn tokens when your learning paths are used by others
-- **Community Contributions:** Get rewarded for providing valuable feedback and improvements
+### Q4 2025
+- 🌍 Multi-language support
+- 🤝 Enterprise solutions
+- 🔗 Integration with major learning platforms
 
-## 🔍 AI-Powered Learning Experience
-
-Sufle leverages cutting-edge AI to transform how you learn:
-
-- **Personalized Recommendations:** Receive resource suggestions tailored to your learning style
-- **Adaptive Difficulty:** Tasks adjust based on your progress and feedback
-- **Knowledge Gaps Analysis:** AI identifies and helps fill gaps in your understanding
-- **Learning Style Detection:** Content recommendations adapt to your preferred learning methods
-
-## 🚀 Getting Started
-
-### For Users
-
-1. **Create an Account**
-   - Visit [sufle.xyz](https://sufle.xyz) and sign up
-   - Complete your learning profile to get personalized recommendations
-
-2. **Create Your First Learning Path**
-   - Click "New Path" and enter your learning goal
-   - Review the AI-generated path and customize as needed
-   - Save and start your learning journey!
-
-3. **Explore the Mindmap**
-   - Navigate through concepts using the interactive mindmap
-   - Click on nodes to see details and related resources
-
-4. **Track Your Progress**
-   - Complete tasks and mark them as done
-   - Monitor your progress through the dashboard
-   - Share your achievements with the community
-
-### For Developers
+## 🛠️ Contribution
 
 #### Prerequisites
 
@@ -175,57 +142,12 @@ npm run dev
 
 Required environment variables in `.env.local`:
 ```
-NEXT_PUBLIC_API_URL=<api-url>
-OPENAI_API_KEY=<openai-api-key>
-MONGODB_URI=<mongodb-connection-string>
-RPC_URL=<blockchain-rpc-url> # Optional for blockchain features
+RPC_URL=http://localhost:8545 # For local development
+TASK_MANAGER_CONTRACT_ADDRESS=YOUR CONTRACT ADDRESS
+PRIVATE_KEY=YOUR PRIVATE KEY
+GEMINI_API_KEY=YOUR GEMINI API KEY
 ```
 
-## 📱 User Interface
-
-<div align="center">
-  <img src="https://raw.githubusercontent.com/tolgazorlu/sufle/main/assets/ui-showcase.png" alt="Sufle UI" width="90%" />
-</div>
-
-### Intuitive Design
-- **Clean, Modern Interface:** Focus on your learning without distractions
-- **Responsive Design:** Access from any device - desktop, tablet, or mobile
-- **Dark/Light Modes:** Choose the theme that works best for you
-- **Accessibility Features:** Designed to be usable by everyone
-
-## 🔄 Roadmap
-
-<div align="center">
-  <img src="https://raw.githubusercontent.com/tolgazorlu/sufle/main/assets/product-roadmap.png" alt="Sufle Product Roadmap" width="80%" />
-</div>
-
-### Q2 2025
-- 🚀 Mobile app launch
-- 🌐 API for third-party integrations
-- 🧩 Learning path templates marketplace
-
-### Q3 2025
-- 👥 Group learning features
-- 🎓 Certification verification system
-- 🔄 Advanced progress analytics
-
-### Q4 2025
-- 🌍 Multi-language support
-- 🤝 Enterprise solutions
-- 🔗 Integration with major learning platforms
-
-## 🤝 Contributing
-
-We welcome contributions from the community! Check out our [Contributing Guide](CONTRIBUTING.md) to get started.
-
-```bash
-# Development workflow
-1. Fork the repository
-2. Create your feature branch: git checkout -b feature/amazing-feature
-3. Commit your changes: git commit -m 'Add some amazing feature'
-4. Push to the branch: git push origin feature/amazing-feature
-5. Open a Pull Request
-```
 
 ## 📄 License
 
@@ -234,9 +156,9 @@ This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md
 ## 📱 Connect With Us
 
 <div align="center">
-  <a href="https://twitter.com/sufleapp"><img src="https://img.shields.io/badge/Twitter-1DA1F2?style=for-the-badge&logo=twitter&logoColor=white" alt="Twitter" /></a>
-  <a href="https://discord.gg/sufle"><img src="https://img.shields.io/badge/Discord-7289DA?style=for-the-badge&logo=discord&logoColor=white" alt="Discord" /></a>
-  <a href="https://github.com/tolgazorlu/sufle"><img src="https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white" alt="GitHub" /></a>
+  <a href="https://x.com/sufleAI"><img src="https://img.shields.io/badge/Twitter-1DA1F2?style=for-the-badge&logo=twitter&logoColor=white" alt="Twitter" /></a>
+  <a href="https://github.com/tolgazorlu/edu-sufle"><img src="https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white" alt="GitHub" /></a>
+  <a href="https://www.linkedin.com/company/sufle-xyz/ "><img src="https://img.shields.io/badge/LinkedIn-0077B6?style=for-the-badge&logo=linkedin&logoColor=white" alt="LinkedIn" /></a>
 </div>
 
 ---
