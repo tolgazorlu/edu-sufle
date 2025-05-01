@@ -8,10 +8,8 @@ export default function FlowPage() {
     <SidebarProvider>
       <AppSidebar variant="inset" />
       <SidebarInset>
-        <SiteHeader />
+        <SiteHeader title="Flow" />
         <div className="flex flex-1 flex-col p-4 md:p-6">
-          <h1 className="text-2xl font-semibold mb-4">Flow</h1>
-          <p className="text-muted-foreground mb-6">Discover learning paths shared by the community.</p>
           <PathFeed />
         </div>
       </SidebarInset>

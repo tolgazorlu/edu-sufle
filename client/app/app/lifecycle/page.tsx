@@ -158,7 +158,7 @@ export default function Lifecycle() {
     <SidebarProvider>
       <AppSidebar variant="inset" />
       <SidebarInset>
-        <SiteHeader />
+        <SiteHeader title="Lifecycle" />
         <div className="flex flex-1 flex-col p-4 md:p-6">
           <div className="container mx-auto py-4">
             <Card className="border-none shadow-lg">

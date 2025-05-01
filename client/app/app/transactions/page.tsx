@@ -146,11 +146,8 @@ export default function TransactionsPage() {
     <SidebarProvider>
       <AppSidebar variant="inset" />
       <SidebarInset>
-        <SiteHeader />
+        <SiteHeader title="Transactions" />
         <div className="flex flex-1 flex-col p-4 md:p-6">
-          <h1 className="text-2xl font-semibold mb-4">Transactions</h1>
-          <p className="text-muted-foreground mb-6">View all transactions related to the Sufle.</p>
-          
           <Card>
             <CardContent>
               {loading ? (

@@ -53,11 +53,16 @@ const defaultData = {
       url: "/app",
       icon: LayoutDashboardIcon,
     },
-    // {
-    //   title: "My Paths",
-    //   url: "/app/paths",
-    //   icon: MapIcon,
-    // },
+    {
+      title: "Paths",
+      url: "/app/paths",
+      icon: MapIcon,
+    },
+    {
+      title: "Mindmap",
+      url: "/app/mindmap",
+      icon: FileCodeIcon,
+    },
     {
       title: "Flow",
       url: "/app/flow",
