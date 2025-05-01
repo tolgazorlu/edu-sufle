@@ -1,4 +1,4 @@
-import type { SurveyData } from "@/app/app/lifecycle/page"
+import type { SurveyData } from "@/app/app/profile/survey/page"
 import { Card, CardContent } from "@/components/ui/card"
 
 interface SurveySummaryProps {
