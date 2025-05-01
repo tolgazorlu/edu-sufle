@@ -6,11 +6,11 @@
 
   <h3 align="center">Sufle</h3>
   <p align="center">
-    <a href="https://www.daco.space/"><strong>Go to Sufle</strong></a>
+    <a href="https://sufle.xyz/"><strong>Go to Sufle</strong></a>
     <br />
-    <a href="https://github.com/tolgazorlu/edu-sufle/issues">Report Bug</a>
+    <a href="hhttps://github.com/tolgazorlu/edu-sufle/issues">Report Bug</a>
     ·
-    <a href="https://github.com/tolgazorlu/edu-sufle/issues">Request Feature</a>
+    <a href="hhttps://github.com/tolgazorlu/edu-sufle/issues">Request Feature</a>
   </p>
 </div>
 
