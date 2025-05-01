@@ -5,6 +5,8 @@ import { useEffect, useState } from "react"
 import { jwtDecode } from "jwt-decode"
 import { useOCAuth } from "@opencampus/ocid-connect-js"
 import {
+  ArrowLeftRightIcon,
+  BrainCircuit,
   CameraIcon,
   ClipboardListIcon,
   DatabaseIcon,
@@ -17,6 +19,8 @@ import {
   MapIcon,
   SearchIcon,
   SettingsIcon,
+  Telescope,
+  UserRoundPenIcon,
 } from "lucide-react"
 
 import { NavMain } from "@/components/nav-main"
@@ -61,22 +65,22 @@ const defaultData = {
     {
       title: "Mindmap",
       url: "/app/mindmap",
-      icon: FileCodeIcon,
+      icon: BrainCircuit,
     },
     {
-      title: "Flow",
-      url: "/app/flow",
-      icon: FileTextIcon,
+      title: "Discover",
+      url: "/app/discover",
+      icon: Telescope,
     },
     {
-      title: "Lifecycle",
-      url: "/app/lifecycle",
-      icon: ListIcon,
+      title: "Profile",
+      url: "/app/profile",
+      icon: UserRoundPenIcon,
     },
     {
       title: "Transactions",
       url: "/app/transactions",
-      icon: DatabaseIcon,
+      icon: ArrowLeftRightIcon,
     },
   ],
   navClouds: [
