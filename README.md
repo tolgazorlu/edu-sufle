@@ -4,7 +4,7 @@
     <img style="border-radius: 10px" src="/sufle.png" alt="Logo" width="80" height="80">
   </a>
 
-  <h3 align="center">SUFLE</h3>
+  <h3 align="center">SUFLE - AI-POWERED ROADMAPS</h3>
   <p align="center">
     <a href="https://sufle.xyz"><img src="https://img.shields.io/badge/Try%20Sufle-Go%20To%20App-brightgreen?style=for-the-badge" alt="Go To App" /></a>
     <br />
@@ -20,12 +20,6 @@
   ![Version](https://img.shields.io/badge/version-1.0.0-green)
   ![AI-Powered](https://img.shields.io/badge/AI--Powered-yes-purple)
   ![Platform](https://img.shields.io/badge/platform-web-orange)
-  
-  <h2>🚀 Your AI-Powered Learning Journey Creator</h2>
-  
-  <p><strong>Design personalized learning paths, create interactive mindmaps, and manage tasks - all powered by AI</strong></p>
-  
-  <a href="https://sufle.xyz"><img src="https://img.shields.io/badge/Try%20Sufle-Get%20Started-brightgreen?style=for-the-badge" alt="Try Sufle" /></a>
 </div>
 
 ## 🌟 Overview
