@@ -4,7 +4,7 @@
     <img style="border-radius: 10px" src="/sufle.png" alt="Logo" width="80" height="80">
   </a>
 
-  <h3 align="center">SUFLE</h3> <br/>
+  <h3 align="center">SUFLE</h3>
   <p align="center">
     <a href="https://sufle.xyz"><img src="https://img.shields.io/badge/Try%20Sufle-Get%20Started-brightgreen?style=for-the-badge" alt="Go To App" /></a>
     <br />
