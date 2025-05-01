@@ -28,7 +28,7 @@ function AppContent() {
     taskCount: 0,
     tasks: [],
     transactionHash: null,
-    pathId: '0' 
+    pathId: '0'
   });
   const [showGeneratedPath, setShowGeneratedPath] = useState(false);
   const [accountBalance, setAccountBalance] = useState("0");
@@ -52,9 +52,8 @@ function AppContent() {
           const web3 = new Web3(window.ethereum);
           const contractAddress = SUFLE_CONTRACT_ADDRESS;
           const contract = new web3.eth.Contract(SUFLE_ABI, contractAddress);
-          
           const surveyCount = await contract.methods.getUserSurveyCount(connectedAddress).call();
-          
+
           if (String(surveyCount) === "0") {
             toast.info("Please complete the survey to continue");
             router.push('/app/lifecycle');
@@ -64,7 +63,7 @@ function AppContent() {
         }
       }
     };
-    
+
     checkSurveyStatus();
   }, [connectedAddress, router]);
 
@@ -76,31 +75,31 @@ function AppContent() {
           console.log("Fetching survey data for address:", connectedAddress);
           const web3 = new Web3(window.ethereum);
           const contract = new web3.eth.Contract(SUFLE_ABI, SUFLE_CONTRACT_ADDRESS);
-          
+
           const surveyCount = Number(await contract.methods.getUserSurveyCount(connectedAddress).call());
           console.log("Survey count:", surveyCount);
-          
+
           if (surveyCount > 0) {
             console.log("Fetching latest survey info...");
             // Get the user's survey IDs
             const surveyIds: string[] = await contract.methods.getUserSurveyIds(connectedAddress).call();
             if (surveyIds && surveyIds.length > 0) {
               const latestSurveyId = surveyIds[surveyIds.length - 1];
-              
+
               // Get the latest survey info
               interface SurveyResponse {
                 [key: number]: string | string[];
               }
               const surveyData = await contract.methods.getSurveyInfo(latestSurveyId).call() as SurveyResponse;
               console.log("Raw survey data:", surveyData);
-              
+
               setSurveyData({
                 categories: Array.isArray(surveyData[2]) ? surveyData[2] as string[] : [],
                 motivations: Array.isArray(surveyData[3]) ? surveyData[3] as string[] : [],
                 occupation: (surveyData[4] as string) || 'Not specified',
                 lifeGoals: (surveyData[5] as string) || 'Not specified'
               });
-              
+
               console.log("Processed survey data:", surveyData);
             } else {
               console.log("No survey IDs found");
@@ -113,7 +112,7 @@ function AppContent() {
         }
       }
     };
-    
+
     fetchSurveyData();
   }, [connectedAddress]);
 
@@ -121,32 +120,32 @@ function AppContent() {
     setConnectedAddress("");
     setAccountBalance("0");
   };
-  
+
   const handleBalanceUpdate = (balance: string) => {
     setAccountBalance(balance);
   };
-  
+
   const handleGeneratePath = async () => {
     if (!pathDescription) {
       toast.error("Please provide a description for your path");
       return;
     }
-    
+
     if (!connectedAddress) {
       toast.error("Please connect your wallet first");
       return;
     }
-    
+
     setLoading(true);
-    
+
     try {
       const web3 = new Web3(window.ethereum);
-      
+
       await window.ethereum.request({ method: "eth_requestAccounts" });
       const accounts = await web3.eth.getAccounts();
-      
+
       const eduTokenContract = new web3.eth.Contract(SUFLE_ABI, SUFLE_CONTRACT_ADDRESS);
-      
+
       const gasPrice = await web3.eth.getGasPrice();
       const estimatedGas = await eduTokenContract.methods
         .generatePathWithDescription(pathDescription)
@@ -154,10 +153,10 @@ function AppContent() {
           from: accounts[0],
           value: web3.utils.toWei(EDU_TOKEN_PRICE, "ether"),
         })
-        .catch(() => "500000"); 
-      
+        .catch(() => "500000");
+
       console.log("Estimated gas:", estimatedGas);
-      
+
       const transaction = await eduTokenContract.methods
         .generatePathWithDescription(pathDescription)
         .send({
@@ -166,30 +165,30 @@ function AppContent() {
           gas: String(estimatedGas),
           gasPrice: String(gasPrice)
         });
-      
+
       console.log("Transaction successful:", transaction);
-      
+
       const response = await fetch('/api/genai', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ 
-          surveyData: { description: pathDescription } 
+        body: JSON.stringify({
+          surveyData: { description: pathDescription }
         }),
       });
-      
+
       if (!response.ok) {
         throw new Error("Failed to generate path");
       }
-      
+
       const data = await response.json();
       const generatedContent = data.result;
-      
+
       let pathData;
       try {
         let textContent;
-        
+
         if (generatedContent.candidates && generatedContent.candidates[0]?.content?.parts) {
           textContent = generatedContent.candidates[0].content.parts[0].text;
         } else if (generatedContent.text) {
@@ -199,12 +198,12 @@ function AppContent() {
         } else {
           textContent = JSON.stringify(generatedContent);
         }
-        
+
         const jsonMatch = textContent.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
           textContent = jsonMatch[0];
         }
-        
+
         pathData = JSON.parse(textContent);
       } catch (error) {
         console.error("Error parsing AI response:", error);
@@ -214,7 +213,7 @@ function AppContent() {
           tasks: []
         };
       }
-      
+
       // Extract the path ID from the transaction events if available
       let pathId = '0';
       if (transaction.events && transaction.events.AIPathGenerated) {
@@ -225,7 +224,7 @@ function AppContent() {
           console.log("Extracted pathId from event:", pathId);
         }
       }
-      
+
       setGeneratedPathInfo({
         title: pathData.title || `AI Generated Path (${new Date().toLocaleDateString()})`,
         description: pathData.description || pathDescription,
@@ -234,7 +233,7 @@ function AppContent() {
         transactionHash: transaction.transactionHash,
         pathId: pathId // Store the path ID separately
       });
-      
+
       setPathDialog(false);
       setShowGeneratedPath(true);
       setPathDescription("");
@@ -244,9 +243,9 @@ function AppContent() {
           pathElement.scrollIntoView({ behavior: 'smooth' });
         }
       }, 100);
-      
+
       toast.success("Path generated successfully!");
-      
+
     } catch (error: any) {
       console.error("Error generating path:", error);
       toast.error(error.message || "Failed to generate path");
@@ -254,7 +253,7 @@ function AppContent() {
       setLoading(false);
     }
   };
-  
+
   const handleViewOnExplorer = () => {
     if (generatedPathInfo.transactionHash) {
       window.open(`https://opencampus-codex.blockscout.com/tx/${generatedPathInfo.transactionHash}`, '_blank');
@@ -266,19 +265,19 @@ function AppContent() {
       toast.error("Please connect your wallet first");
       return;
     }
-    
+
     if (!generatedPathInfo) {
       toast.error("No learning path to save");
       return;
     }
-    
+
     try {
       setLoading(true);
       console.log("Saving path to blockchain...");
-      
+
       // First create all tasks and collect their IDs
       const taskIds: number[] = [];
-      
+
       for (const task of generatedPathInfo.tasks) {
         console.log("Creating task:", task.title);
         const taskHash = await createTask(
@@ -289,21 +288,21 @@ function AppContent() {
           task.status || "To Do",
           task.tags || ""
         );
-        
+
         if (taskHash) {
           // For simplicity, we're using a hash of the task data as ID
           // In a real implementation, you would get the task ID from the transaction event
           const taskId = parseInt(
             Web3.utils.keccak256(
               `${task.title}${task.description}${Date.now()}`
-            ).slice(2, 10), 
+            ).slice(2, 10),
             16
           );
           taskIds.push(taskId);
           console.log("Task created with ID:", taskId);
         }
       }
-      
+
       if (taskIds.length > 0) {
         console.log("Creating path with tasks:", taskIds);
         const pathHash = await createPath(
@@ -315,7 +314,7 @@ function AppContent() {
           },
           taskIds
         );
-        
+
         if (pathHash) {
           console.log("Path created with hash:", pathHash);
           toast.success("Path saved successfully!");
@@ -334,14 +333,14 @@ function AppContent() {
       toast.error("No tasks available for the mindmap");
       return;
     }
-    
+
     try {
       // Define extended task type with properties for node processing
       interface ExtendedTask extends ITask {
         _nodeId?: string;
         _tags?: string[];
       }
-      
+
       // Group tasks by priority for better organization
       const tasksByPriority: Record<string, ExtendedTask[]> = {};
       generatedPathInfo.tasks.forEach(task => {
@@ -351,17 +350,17 @@ function AppContent() {
         }
         tasksByPriority[priority].push(task as ExtendedTask);
       });
-      
+
       // Prepare nodes data with horizontal flow layout (left to right)
       const nodes: any[] = [];
       const edges: any[] = [];
-      
+
       // Define node spacing
       const HORIZONTAL_SPACING = 300;
       const VERTICAL_SPACING = 100;
       const LEFT_MARGIN = 100;
       const TOP_MARGIN = 150;
-      
+
       // Add main topic node at the left side
       nodes.push({
         id: 'main',
@@ -369,32 +368,32 @@ function AppContent() {
         position: { x: LEFT_MARGIN, y: 300 },
         type: 'input'
       });
-      
+
       // Process each priority level as a column
       const priorityOrder = ['critical', 'high', 'medium', 'low'];
       let columnIndex = 1; // Start with column 1 (main node is at column 0)
-      
+
       priorityOrder.forEach(priority => {
         const tasks = tasksByPriority[priority] || [];
         if (tasks.length === 0) return;
-        
+
         // Calculate vertical positioning for this column
         const columnX = LEFT_MARGIN + (columnIndex * HORIZONTAL_SPACING);
         const totalHeight = tasks.length * VERTICAL_SPACING;
         const startY = Math.max(100, 300 - (totalHeight / 2));
-        
+
         // Add a priority header node
         const headerNodeId = `header-${priority}`;
         nodes.push({
           id: headerNodeId,
-          data: { 
+          data: {
             label: priority.charAt(0).toUpperCase() + priority.slice(1) + " Tasks",
             isMainNode: true
           },
           position: { x: columnX, y: TOP_MARGIN },
           type: 'default'
         });
-        
+
         // Connect main node to the priority header
         edges.push({
           id: `e-main-${headerNodeId}`,
@@ -403,12 +402,12 @@ function AppContent() {
           label: priority,
           type: 'smoothstep'
         });
-        
+
         // Create nodes for each task in this priority group
         tasks.forEach((task, taskIndex) => {
           const nodeId = `${priority}-${taskIndex}`;
           const nodeY = startY + (taskIndex * VERTICAL_SPACING);
-          
+
           // Create task node
           nodes.push({
             id: nodeId,
@@ -416,7 +415,7 @@ function AppContent() {
             position: { x: columnX, y: nodeY },
             type: 'default'
           });
-          
+
           // Connect priority header to the task node
           edges.push({
             id: `e-${headerNodeId}-${nodeId}`,
@@ -424,7 +423,7 @@ function AppContent() {
             target: nodeId,
             type: 'default'
           });
-          
+
           // Keep track of tags for later connections
           if (task.tags) {
             const tags = task.tags.split(',').map(tag => tag.trim());
@@ -433,10 +432,10 @@ function AppContent() {
             extendedTask._tags = tags;
           }
         });
-        
+
         columnIndex++;
       });
-      
+
       // Create connections between nodes that share the same tags
       // Group tasks by tag
       const tasksByTag: Record<string, string[]> = {};
@@ -448,7 +447,7 @@ function AppContent() {
           });
         }
       });
-      
+
       // Create edges between tasks with the same tag
       Object.entries(tasksByTag).forEach(([tag, nodeIds]) => {
         if (nodeIds.length > 1) {
@@ -456,13 +455,13 @@ function AppContent() {
           for (let i = 0; i < nodeIds.length - 1; i++) {
             const source = nodeIds[i];
             const target = nodeIds[i + 1];
-            
+
             // Avoid duplicate connections
-            const existingEdge = edges.find(e => 
-              (e.source === source && e.target === target) || 
+            const existingEdge = edges.find(e =>
+              (e.source === source && e.target === target) ||
               (e.source === target && e.target === source)
             );
-            
+
             if (!existingEdge) {
               edges.push({
                 id: `e-tag-${source}-${target}`,
@@ -477,13 +476,13 @@ function AppContent() {
           }
         }
       });
-      
+
       // Save to localStorage
       localStorage.setItem('mindmapData', JSON.stringify({ nodes, edges }));
-      
+
       // Navigate to map page
       router.push('/app/map');
-      
+
       toast.success("Opening mindmap visualization");
     } catch (error) {
       console.error("Error preparing mindmap data:", error);
@@ -562,7 +561,7 @@ function AppContent() {
               </Card>
             </div>
           </div>
-          
+
           {/* Generated Learning Path (Appears after generation) */}
           {showGeneratedPath && (
             <div id="generated-path" className="mb-8 animate-fade-in">
@@ -582,7 +581,7 @@ function AppContent() {
                     </div>
                   )}
                 </div>
-                
+
                 <CardContent className="p-8">
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
                     <div className="bg-blue-50 rounded-lg p-4 flex flex-col items-center justify-center">
@@ -596,8 +595,8 @@ function AppContent() {
                     <div className="bg-amber-50 rounded-lg p-4 flex flex-col items-center justify-center">
                       <div className="text-amber-500 mb-1 text-sm font-medium">PROGRESS</div>
                       <div className="text-base font-semibold">
-                        {generatedPathInfo.tasks.length > 0 
-                          ? Math.round((generatedPathInfo.tasks.filter(t => t.status === 'completed').length / generatedPathInfo.tasks.length) * 100) 
+                        {generatedPathInfo.tasks.length > 0
+                          ? Math.round((generatedPathInfo.tasks.filter(t => t.status === 'completed').length / generatedPathInfo.tasks.length) * 100)
                           : 0}%
                       </div>
                     </div>
@@ -606,7 +605,7 @@ function AppContent() {
                       <div className="text-base font-semibold">{new Date().toLocaleDateString()}</div>
                     </div>
                   </div>
-                  
+
                   <div className="mb-6">
                     <div className="flex justify-between items-center mb-4">
                       <h3 className="text-lg font-semibold flex items-center">
@@ -630,89 +629,89 @@ function AppContent() {
                         </Button>
                       </div>
                     </div>
-                    
+
                     <div className="space-y-4">
                       {generatedPathInfo.tasks.map((task: ITask, idx: number) => {
                         // Add a local state variable to track pending completion status
                         const isPendingCompletion = loading && task.status !== 'completed' && task._pendingCompletion;
-                        
+
                         return (
-                        <div key={idx} className={`border-2 ${task.status === 'completed' || isPendingCompletion ? 'border-green-500 bg-green-50' : 'border-gray-100 bg-white'} rounded-lg p-5 shadow-sm hover:shadow-md transition-all duration-200`}>
-                          <div className="flex justify-between items-start mb-3">
-                            <div className="flex items-center gap-3">
-                              <div className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-100 text-blue-600 font-medium flex items-center justify-center">
-                                {idx + 1}
+                          <div key={idx} className={`border-2 ${task.status === 'completed' || isPendingCompletion ? 'border-green-500 bg-green-50' : 'border-gray-100 bg-white'} rounded-lg p-5 shadow-sm hover:shadow-md transition-all duration-200`}>
+                            <div className="flex justify-between items-start mb-3">
+                              <div className="flex items-center gap-3">
+                                <div className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-100 text-blue-600 font-medium flex items-center justify-center">
+                                  {idx + 1}
+                                </div>
+                                <h4 className="font-semibold text-base">{task.title}</h4>
                               </div>
-                              <h4 className="font-semibold text-base">{task.title}</h4>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <span className={`text-xs px-2 py-1 rounded-full 
-                                ${task.priority === 'high' || task.priority === 'critical' 
-                                  ? 'bg-red-100 text-red-800'
-                                  : task.priority === 'medium' 
-                                    ? 'bg-amber-100 text-amber-800'
-                                    : 'bg-green-100 text-green-800'
-                                }`}>
-                                {task.priority}
-                              </span>
-                              <span className={`text-xs px-2 py-1 rounded-full ${task.status === 'completed' ? 'bg-green-100 text-green-800' : 'bg-purple-100 text-purple-800'}`}>
-                                {task.status}
-                              </span>
-                            </div>
-                          </div>
-                          <p className="text-gray-600 mb-3 text-sm">{task.description}</p>
-                          <div className="flex justify-between items-center">
-                            {task.tags && (
-                              <div className="flex flex-wrap gap-1.5">
-                                {task.tags.split(',').map((tag: string, tagIdx: number) => (
-                                  <span key={tagIdx} className="text-xs bg-gray-100 text-gray-700 px-2.5 py-1 rounded-full">
-                                    #{tag.trim()}
-                                  </span>
-                                ))}
+                              <div className="flex items-center gap-2">
+                                <span className={`text-xs px-2 py-1 rounded-full 
+                                ${task.priority === 'high' || task.priority === 'critical'
+                                    ? 'bg-red-100 text-red-800'
+                                    : task.priority === 'medium'
+                                      ? 'bg-amber-100 text-amber-800'
+                                      : 'bg-green-100 text-green-800'
+                                  }`}>
+                                  {task.priority}
+                                </span>
+                                <span className={`text-xs px-2 py-1 rounded-full ${task.status === 'completed' ? 'bg-green-100 text-green-800' : 'bg-purple-100 text-purple-800'}`}>
+                                  {task.status}
+                                </span>
                               </div>
-                            )}
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className={`text-xs ${task.status === 'completed' ? 'bg-green-100 text-green-700' : ''}`}
-                              onClick={() => {
-                                // Visual effect only implementation
-                                // Update the task in the state without blockchain interaction
-                                const updatedTasks = [...generatedPathInfo.tasks];
-                                const taskIndex = updatedTasks.indexOf(task);
-                                if (taskIndex !== -1) {
-                                  // Update task status to completed
-                                  updatedTasks[taskIndex] = {
-                                    ...task,
-                                    status: 'completed'
-                                  };
-                                  
-                                  setGeneratedPathInfo({
-                                    ...generatedPathInfo,
-                                    tasks: updatedTasks
-                                  });
-                                  
-                                  toast.success("Task marked as completed!");
-                                  
-                                  // Check if all tasks are completed
-                                  const allTasksCompleted = updatedTasks.every(t => t.status === 'completed');
-                                  
-                                  if (allTasksCompleted) {
-                                    toast.success("Congratulations! You've completed all tasks and earned 0.01 EDU tokens!");
+                            </div>
+                            <p className="text-gray-600 mb-3 text-sm">{task.description}</p>
+                            <div className="flex justify-between items-center">
+                              {task.tags && (
+                                <div className="flex flex-wrap gap-1.5">
+                                  {task.tags.split(',').map((tag: string, tagIdx: number) => (
+                                    <span key={tagIdx} className="text-xs bg-gray-100 text-gray-700 px-2.5 py-1 rounded-full">
+                                      #{tag.trim()}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className={`text-xs ${task.status === 'completed' ? 'bg-green-100 text-green-700' : ''}`}
+                                onClick={() => {
+                                  // Visual effect only implementation
+                                  // Update the task in the state without blockchain interaction
+                                  const updatedTasks = [...generatedPathInfo.tasks];
+                                  const taskIndex = updatedTasks.indexOf(task);
+                                  if (taskIndex !== -1) {
+                                    // Update task status to completed
+                                    updatedTasks[taskIndex] = {
+                                      ...task,
+                                      status: 'completed'
+                                    };
+
+                                    setGeneratedPathInfo({
+                                      ...generatedPathInfo,
+                                      tasks: updatedTasks
+                                    });
+
+                                    toast.success("Task marked as completed!");
+
+                                    // Check if all tasks are completed
+                                    const allTasksCompleted = updatedTasks.every(t => t.status === 'completed');
+
+                                    if (allTasksCompleted) {
+                                      toast.success("Congratulations! You've completed all tasks and earned 0.01 EDU tokens!");
+                                    }
                                   }
-                                }
-                              }}
-                              disabled={task.status === 'completed'}
-                            >
-                              {task.status === 'completed' ? 'Completed' : 'Mark Complete'}
-                            </Button>
+                                }}
+                                disabled={task.status === 'completed'}
+                              >
+                                {task.status === 'completed' ? 'Completed' : 'Mark Complete'}
+                              </Button>
+                            </div>
                           </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
                     </div>
                   </div>
-                  
+
                   <div className="flex justify-between mt-8">
                     <Button variant="outline">
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
@@ -751,18 +750,18 @@ function AppContent() {
                         className="border-red-200 text-red-700 hover:bg-red-50 hover:text-red-800"
                         onClick={() => setShowGeneratedPath(false)}
                       >
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-6">
-  <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0 1 11.186 0Z" />
-</svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-6">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0 1 11.186 0Z" />
+                        </svg>
 
                         Remove
                       </Button>
-                      <Button 
+                      <Button
                         className="bg-blue-600 hover:bg-blue-700"
                         onClick={handleSaveToYourPaths}
                         disabled={loading}
                       >
-                        {loading ? (
+                       xw {loading ? (
                           <span className="flex items-center">
                             <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -773,8 +772,8 @@ function AppContent() {
                         ) : (
                           <>
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-6">
-  <path strokeLinecap="round" strokeLinejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0 1 11.186 0Z" />
-</svg>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0 1 11.186 0Z" />
+                            </svg>
 
                             Save to Your Paths
                           </>
@@ -795,7 +794,7 @@ function AppContent() {
                   Describe what you want to learn and our AI will create a personalized path for you.
                 </DialogDescription>
               </DialogHeader>
-              
+
               <div className="py-4">
                 <div className="bg-blue-50 p-4 rounded-lg mb-5">
                   <h4 className="font-medium text-blue-800 mb-2 flex items-center">
@@ -811,11 +810,11 @@ function AppContent() {
                     <li>• State your learning objectives clearly</li>
                   </ul>
                 </div>
-                
+
                 <Label htmlFor="pathDescription" className="text-base font-medium">
                   Describe your learning goals
                 </Label>
-                <Textarea 
+                <Textarea
                   id="pathDescription"
                   value={pathDescription}
                   onChange={(e) => setPathDescription(e.target.value)}
@@ -823,7 +822,7 @@ function AppContent() {
                   className="min-h-[150px] mt-2 text-base"
                   required
                 />
-                
+
                 <div className="mt-4 flex items-center text-amber-700 bg-amber-50 p-3 rounded-lg text-sm">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.414-1.414L11 9.414V6z" clipRule="evenodd" />
@@ -831,12 +830,12 @@ function AppContent() {
                   Generation usually takes about 15-20 seconds.
                 </div>
               </div>
-              
+
               <DialogFooter className="flex sm:justify-between gap-2">
                 <Button variant="outline" onClick={() => setPathDialog(false)}>
                   Cancel
                 </Button>
-                <Button 
+                <Button
                   onClick={handleGeneratePath}
                   disabled={loading || !pathDescription}
                   className="bg-blue-600 hover:bg-blue-700"

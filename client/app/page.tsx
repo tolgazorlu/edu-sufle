@@ -304,56 +304,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Technology Stack Section */}
-      {/* <section
-        id="technology"
-        className="relative z-10 bg-slate-950/80 backdrop-blur-md py-24"
-      >
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              Cutting-Edge Technology Stack
-            </h2>
-            <p className="text-slate-300 max-w-2xl mx-auto">
-              Sufle is built on a robust foundation of blockchain and AI
-              technologies.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            {[
-              { name: "Blockchain", description: "Solidity, Hardhat, ERC20" },
-              {
-                name: "Frontend",
-                description: "Next.js, TailwindCSS, Shadcn UI",
-              },
-              {
-                name: "AI Integration",
-                description: "Gemini API for roadmap generation",
-              },
-              { name: "Backend", description: "MongoDB, custom APIs" },
-              { name: "Token Economy", description: "EduToken" },
-              { name: "Smart Contracts", description: "SufleTaskManager" },
-              {
-                name: "Survey System",
-                description: "On-chain preference storage",
-              },
-              { name: "Social Features", description: "Community validation" },
-            ].map((tech, index) => (
-              <div
-                key={index}
-                className="bg-slate-900/50 backdrop-blur-sm border border-purple-500/20 rounded-xl p-6 hover:border-purple-500/40 transition-all hover:shadow-lg hover:shadow-purple-500/10"
-              >
-                <h3 className="text-lg font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-purple-300 to-blue-300">
-                  {tech.name}
-                </h3>
-                <p className="text-sm text-slate-300">{tech.description}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section> */}
-
       {/* CTA Section */}
       <section className="relative z-10 py-24">
         <div className="container mx-auto px-4">
