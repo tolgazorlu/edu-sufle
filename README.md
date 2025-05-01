@@ -1,4 +1,18 @@
-# <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Graduation%20Cap.png" alt="Graduation Cap" width="30" /> Sufle
+<!-- PROJECT LOGO -->
+<div align="center">
+  <a href="#">
+    <img style="border-radius: 10px" src="/sufle.png" alt="Logo" width="80" height="80">
+  </a>
+
+  <h3 align="center">Sufle</h3>
+  <p align="center">
+    <a href="https://www.daco.space/"><strong>Go to Sufle</strong></a>
+    <br />
+    <a href="https://github.com/tolgazorlu/edu-sufle/issues">Report Bug</a>
+    ·
+    <a href="https://github.com/tolgazorlu/edu-sufle/issues">Request Feature</a>
+  </p>
+</div>
 
 <div align="center">
   
