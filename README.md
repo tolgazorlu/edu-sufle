@@ -6,7 +6,7 @@
 
   <h3 align="center">SUFLE</h3>
   <p align="center">
-    <a href="https://sufle.xyz"><img src="https://img.shields.io/badge/Try%20Sufle-Get%20Started-brightgreen?style=for-the-badge" alt="Go To App" /></a>
+    <a href="https://sufle.xyz"><img src="https://img.shields.io/badge/Try%20Sufle-Go%20To%20App-brightgreen?style=for-the-badge" alt="Go To App" /></a>
     <br />
     <a href="https://github.com/tolgazorlu/edu-sufle/issues">Report Bug</a>
     ·
