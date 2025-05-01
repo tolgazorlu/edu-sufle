@@ -29,15 +29,10 @@ function SettingsContent() {
           <AppSidebar variant="inset" />
           <SidebarInset>
             <SiteHeader title="Settings" handleConnect={handleConnect} handleDisconnect={handleDisconnect} handleBalanceUpdate={handleBalanceUpdate} />
-            <main className="flex-1 overflow-y-auto p-6 md:p-8">
-              <div className="space-y-8">
-                
-                {/* Wallet Information Component */}
-                <div className="mb-6">
+            <main className="flex-1 overflow-y-auto p-4">
+             
                   <WalletInformation />
-                </div>
-                
-              </div>
+            
             </main>
         </SidebarInset>
     </SidebarProvider>
