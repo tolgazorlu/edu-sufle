@@ -4,8 +4,9 @@
     <img style="border-radius: 10px" src="/sufle.png" alt="Logo" width="80" height="80">
   </a>
 
+  <h3 align="center">SUFLE</h3> <br/>
   <p align="center">
-   <a href="https://sufle.xyz"><img src="https://img.shields.io/badge/Try%20Sufle-Get%20Started-brightgreen?style=for-the-badge" alt="Go To App" /></a>
+    <a href="https://sufle.xyz"><img src="https://img.shields.io/badge/Try%20Sufle-Get%20Started-brightgreen?style=for-the-badge" alt="Go To App" /></a>
     <br />
     <a href="https://github.com/tolgazorlu/edu-sufle/issues">Report Bug</a>
     ·
@@ -24,7 +25,7 @@
   
   <p><strong>Design personalized learning paths, create interactive mindmaps, and manage tasks - all powered by AI</strong></p>
   
-  
+  <a href="https://sufle.xyz"><img src="https://img.shields.io/badge/Try%20Sufle-Get%20Started-brightgreen?style=for-the-badge" alt="Try Sufle" /></a>
 </div>
 
 ## 🌟 Overview
