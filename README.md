@@ -25,24 +25,37 @@
 <details>
   <summary>Table of Contents</summary>
   <ol>
+    <li><a href="#introduction">Introduction</a></li>
     <li>
-      <a href="#about-the-project">About The Project</a>
+      <a href="#-key-features">Key Features</a>
+    </li>
+    <li>
+      <a href="#-how-sufle-works">How Sufle Works</a>
       <ul>
-        <li><a href="#technologies">Technologies</a></li>
-        <li><a href="#features">Features</a></li>
+        <li><a href="#️⃣-create-your-learning-path">Create Your Learning Path</a></li>
+        <li><a href="#️⃣-explore-through-mindmaps">Explore Through Mindmaps</a></li>
+        <li><a href="#️⃣-manage-learning-tasks">Manage Learning Tasks</a></li>
+        <li><a href="#️⃣-track-your-progress">Track Your Progress</a></li>
       </ul>
     </li>
     <li>
-      <a href="#getting-started">Getting Started</a>
+      <a href="#-roadmap">Roadmap</a>
+      <ul>
+        <li><a href="#q2-2025">Q2 2025</a></li>
+        <li><a href="#q3-2025">Q3 2025</a></li>
+        <li><a href="#q4-2025">Q4 2025</a></li>
+      </ul>
+    </li>
+    <li>
+      <a href="#️⃣-contribution">Contribution</a>
       <ul>
         <li><a href="#prerequisites">Prerequisites</a></li>
-        <li><a href="#installation">Installation</a></li>
+        <li><a href="#installation-steps">Installation Steps</a></li>
+        <li><a href="#environment-variables">Environment Variables</a></li>
       </ul>
     </li>
-    <li><a href="#contributing">Contributing</a></li>
-    <li><a href="#license">License</a></li>
-    <li><a href="#contact">Contact</a></li>
-    <li><a href="#acknowledgments">Acknowledgments</a></li>
+    <li><a href="#-license">License</a></li>
+    <li><a href="#-connect-with-us">Connect With Us</a></li>
   </ol>
 </details>
 
