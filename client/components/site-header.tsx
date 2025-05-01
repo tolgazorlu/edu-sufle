@@ -2,7 +2,7 @@ import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { MetaMaskConnect } from "./MetaMaskConnect"
 
-export function SiteHeader({ title, handleConnect, handleDisconnect, handleBalanceUpdate }: { title: string, handleConnect: (address: string) => void, handleDisconnect: () => void, handleBalanceUpdate: (balance: string) => void }) {
+export function SiteHeader({ title, handleConnect, handleDisconnect, handleBalanceUpdate }: { title: string, handleConnect?: (address: string) => void, handleDisconnect?: () => void, handleBalanceUpdate?: (balance: string) => void }) {
   
   return (
     <header className="group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 flex h-12 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear">

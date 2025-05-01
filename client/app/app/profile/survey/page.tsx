@@ -1,3 +1,4 @@
+"use client"
 import React from 'react'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -11,6 +12,9 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Web3 from "web3"
 import { SUFLE_CONTRACT_ADDRESS, SUFLE_ABI } from "@/lib/contracts"
+import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
+import { AppSidebar } from '@/components/app-sidebar'
+import { SiteHeader } from '@/components/site-header'
 
 export type SurveyData = {
   lifeGoals: string
@@ -152,39 +156,47 @@ const page = () => {
   }
 
   return (
-    <Card className="border-none shadow-lg">
-      <CardHeader className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-t-lg">
-        <CardTitle className="text-center text-2xl">Welcome to Sufle Learning Journey</CardTitle>
-        <p className="text-center text-white/80">Let&apos;s personalize your educational roadmap</p>
-      </CardHeader>
-      <CardContent className="pt-6">
-        <SurveyProgress currentStep={currentStep} totalSteps={totalSteps} />
-        <div className="mt-6 min-h-[300px]">{renderStep()}</div>
-      </CardContent>
-      <CardFooter className="flex justify-between border-t pt-6">
-        <Button variant="outline" onClick={handleBack} disabled={currentStep === 1}>
-          Back
-        </Button>
-        {currentStep < totalSteps ? (
-          <Button onClick={handleNext} disabled={isNextDisabled()} className="bg-purple-600 hover:bg-purple-700">
-            Next
-          </Button>
-        ) : (
-          <Button
-            onClick={handleSubmit}
-            className="bg-green-600 hover:bg-green-700"
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? "Submitting..." : "Submit"}
-          </Button>
-        )}
-      </CardFooter>
-      {error && (
-        <div className="px-6 pb-6 text-red-500 text-sm">
-          {error}
-        </div>
-      )}
-    </Card>
+    <SidebarProvider>
+      <AppSidebar variant="inset" />
+      <SidebarInset>
+        <SiteHeader title="Survey" />
+        <main className="flex-1 overflow-y-auto p-4">
+          <Card className="border-none shadow-lg">
+            <CardHeader className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-t-lg">
+              <CardTitle className="text-center text-2xl">Welcome to Sufle Learning Journey</CardTitle>
+              <p className="text-center text-white/80">Let&apos;s personalize your educational roadmap</p>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <SurveyProgress currentStep={currentStep} totalSteps={totalSteps} />
+              <div className="mt-6 min-h-[300px]">{renderStep()}</div>
+            </CardContent>
+            <CardFooter className="flex justify-between border-t pt-6">
+              <Button variant="outline" onClick={handleBack} disabled={currentStep === 1}>
+                Back
+              </Button>
+              {currentStep < totalSteps ? (
+                <Button onClick={handleNext} disabled={isNextDisabled()} className="bg-purple-600 hover:bg-purple-700">
+                  Next
+                </Button>
+              ) : (
+                <Button
+                  onClick={handleSubmit}
+                  className="bg-green-600 hover:bg-green-700"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "Submitting..." : "Submit"}
+                </Button>
+              )}
+            </CardFooter>
+            {error && (
+              <div className="px-6 pb-6 text-red-500 text-sm">
+                {error}
+              </div>
+            )}
+          </Card>
+        </main>
+      </SidebarInset>
+    </SidebarProvider>
   )
 }
 
