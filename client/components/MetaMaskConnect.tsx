@@ -296,22 +296,22 @@ export const MetaMaskConnect: React.FC<MetaMaskConnectProps> = ({
 
   if (isConnected && accountAddress) {
     return (
-      <div className="flex items-center space-x-2">
-        <div className="flex flex-col items-end">
-            <div className="text-sm">
-              <span className="font-medium">{balance} EDU</span>
-            </div>
-            <div className="text-xs truncate max-w-[150px] ">
-              {accountAddress.slice(0, 6)}...{accountAddress.slice(-4)}
-            </div>
+      <div className="flex items-center gap-2 bg-teal-50/80 dark:bg-teal-900/20 rounded-full border border-teal-200/50 dark:border-teal-800/30 h-8 px-2">
+        <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+        <div className="text-xs text-gray-600 dark:text-gray-400">
+          {accountAddress.slice(0, 6)}...{accountAddress.slice(-4)}
+        </div>
+        <div className="flex items-center gap-1 px-2 py-0.5 bg-teal-100/50 dark:bg-teal-800/20 rounded-full">
+          <span className="font-medium text-xs">{balance}</span>
+          <span className="text-xs font-semibold text-teal-600 dark:text-teal-400">EDU</span>
         </div>
         <Button 
-          variant="outline" 
-          size="sm" 
+          variant="ghost" 
+          size="icon"
           onClick={() => handleDisconnect()}
-          className="text-xs"
+          className="h-5 w-5 p-0 hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/30 dark:hover:text-red-400"
         >
-          Disconnect
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
         </Button>
       </div>
     );

@@ -496,18 +496,8 @@ function AppContent() {
     <SidebarProvider>
       <AppSidebar variant="inset" />
       <SidebarInset>
-        <SiteHeader title="Home" />
+        <SiteHeader title="Home" handleConnect={handleConnect} handleDisconnect={handleDisconnect} handleBalanceUpdate={handleBalanceUpdate} />
         <div className="flex flex-1 flex-col p-4 md:p-6">
-          {/* Dashboard Header with Connect Button */}
-          <div className="flex justify-between items-center mb-4">
-            <h1 className="text-2xl font-bold text-gray-800">Here you are</h1>
-            <MetaMaskConnect
-              onConnect={handleConnect}
-              onDisconnect={handleDisconnect}
-              onBalanceUpdate={handleBalanceUpdate}
-            />
-          </div>
-          
           {/* User Profile Card - Matching Design */}
           <div className="mb-6">
             <Card className="shadow-sm hover:shadow-md transition-shadow border border-indigo-100 overflow-hidden rounded-xl shadow-lg">

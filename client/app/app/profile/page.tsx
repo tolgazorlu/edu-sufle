@@ -25,6 +25,8 @@ export type SurveyData = {
 
 export default function Lifecycle() {
   const router = useRouter()
+  const [connectedAddress, setConnectedAddress] = useState("")
+  const [accountBalance, setAccountBalance] = useState("0");
   const [currentStep, setCurrentStep] = useState(1)
   const [surveyData, setSurveyData] = useState<SurveyData>({
     lifeGoals: "",
@@ -154,11 +156,23 @@ export default function Lifecycle() {
     }
   }
 
+  const handleConnect = (address: string) => {
+    setConnectedAddress(address);
+  };
+
+  const handleDisconnect = () => {
+    setConnectedAddress("");
+  };
+
+  const handleBalanceUpdate = (balance: string) => {
+    setAccountBalance(balance);
+  };
+
   return (
     <SidebarProvider>
       <AppSidebar variant="inset" />
       <SidebarInset>
-        <SiteHeader title="Profile" />
+        <SiteHeader title="Profile" handleConnect={handleConnect} handleDisconnect={handleDisconnect} handleBalanceUpdate={handleBalanceUpdate} />
         <div className="flex flex-1 flex-col p-4 md:p-6">
           <div className="container mx-auto py-4">
             <Card className="border-none shadow-lg">

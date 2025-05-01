@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button"
 import { AppSidebar } from "@/components/app-sidebar"
 import { SiteHeader } from "@/components/site-header"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
-import { MetaMaskConnect } from "@/components/MetaMaskConnect"
 
 interface Task {
   title: string;
@@ -31,6 +30,7 @@ export default function PathsPage() {
   const [paths, setPaths] = useState<Path[]>([])
   const [loading, setLoading] = useState(true)
   const [connectedAddress, setConnectedAddress] = useState("")
+  const [accountBalance, setAccountBalance] = useState("0");
   const router = useRouter()
 
   useEffect(() => {
@@ -66,18 +66,24 @@ export default function PathsPage() {
     router.push(`/app/paths/${pathId}`)
   }
 
+  const handleConnect = (address: string) => {
+    setConnectedAddress(address);
+  };
+
+  const handleDisconnect = () => {
+    setConnectedAddress("");
+  };
+
+  const handleBalanceUpdate = (balance: string) => {
+    setAccountBalance(balance);
+  };
+
   return (
     <SidebarProvider>
       <AppSidebar variant="inset" />
       <SidebarInset>
-        <SiteHeader title="Paths" />
+        <SiteHeader title="Paths" handleConnect={handleConnect} handleDisconnect={handleDisconnect} handleBalanceUpdate={handleBalanceUpdate} />
         <div className="flex flex-1 flex-col p-4 md:p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h1 className="text-2xl font-semibold">My Learning Paths</h1>
-            <MetaMaskConnect 
-              onConnect={(address) => setConnectedAddress(address)} 
-            />
-          </div>
 
           {loading ? (
             <div className="flex items-center justify-center h-64">

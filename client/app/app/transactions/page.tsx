@@ -13,7 +13,7 @@ import {
   TableHeader, 
   TableRow 
 } from "@/components/ui/table"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { SUFLE_CONTRACT_ADDRESS } from '@/lib/contracts'
@@ -37,6 +37,8 @@ export default function TransactionsPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [loading, setLoading] = useState(true)
   const [account, setAccount] = useState<string | null>(null)
+  const [connectedAddress, setConnectedAddress] = useState<string>("");
+  const [accountBalance, setAccountBalance] = useState<string>("0");
 
   useEffect(() => {
     const connectWallet = async () => {
@@ -142,11 +144,23 @@ export default function TransactionsPage() {
     window.open(`https://sepolia.etherscan.io/tx/${hash}`, '_blank')
   }
 
+  const handleConnect = (address: string) => {
+    setConnectedAddress(address);
+  };
+
+  const handleDisconnect = () => {
+    setConnectedAddress("");
+  };
+
+  const handleBalanceUpdate = (balance: string) => {
+    setAccountBalance(balance);
+  };
+
   return (
     <SidebarProvider>
       <AppSidebar variant="inset" />
       <SidebarInset>
-        <SiteHeader title="Transactions" />
+        <SiteHeader title="Transactions" handleConnect={handleConnect} handleDisconnect={handleDisconnect} handleBalanceUpdate={handleBalanceUpdate} />
         <div className="flex flex-1 flex-col p-4 md:p-6">
           <Card>
             <CardContent>
