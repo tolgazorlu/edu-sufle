@@ -125,7 +125,7 @@ const defaultData = {
   navSecondary: [
     {
       title: "Settings",
-      url: "#",
+      url: "/app/settings",
       icon: SettingsIcon,
     },
     {

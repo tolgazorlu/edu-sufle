@@ -1,7 +1,7 @@
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 
-export function SiteHeader() {
+export function SiteHeader({ title }: { title: string }) {
   
   return (
     <header className="group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 flex h-12 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear">
@@ -12,7 +12,7 @@ export function SiteHeader() {
             orientation="vertical"
             className="mx-2 data-[orientation=vertical]:h-4"
         />
-        <h1 className="text-base font-medium">Your Path</h1></div>
+        <h1 className="text-base font-medium">{title}</h1></div>
 
        
       </div>
