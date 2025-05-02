@@ -23,7 +23,7 @@ export type SurveyData = {
   occupation: string
 }
 
-const page = () => {
+const Page = () => {
   const router = useRouter()
 
   const [currentStep, setCurrentStep] = useState(1)
@@ -200,4 +200,4 @@ const page = () => {
   )
 }
 
-export default page
+export default Page
