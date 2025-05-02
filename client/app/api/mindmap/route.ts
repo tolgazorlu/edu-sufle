@@ -63,7 +63,7 @@ export async function POST(request: Request) {
     const response = await ai.models.generateContent({
       model: "gemini-2.0-flash",
       contents: [{ role: "user", parts: [{ text: mindmapGeneratorPrompt }] }],
-      generationConfig: {
+      config: {
         temperature: 0.2,
         topP: 0.8,
         topK: 40,
@@ -71,7 +71,7 @@ export async function POST(request: Request) {
       },
     });
 
-    if (!response || !response.response) {
+    if (!response || !response.candidates || response.candidates.length === 0) {
       console.error("Empty response from Gemini API");
       return NextResponse.json(
         { error: "Failed to get response from AI" },
@@ -82,7 +82,7 @@ export async function POST(request: Request) {
     console.log("Received response from Gemini API");
     
     // Get text response and attempt to parse JSON
-    const responseText = response.response.text();
+    const responseText = response.text || "";
     console.log("Raw response:", responseText.substring(0, 200) + "...");
     
     // Try to extract JSON object if it's wrapped in other text
