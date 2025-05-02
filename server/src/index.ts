@@ -27,17 +27,17 @@ app.use(express.json());
 app.use(morgan('dev'));
 
 // * ROUTES
-const userRoute = require('./routes/user.routes');
-app.use('/v1/user', userRoute);
+// const userRoute = require('./routes/user.routes');
+// app.use('/v1/user', userRoute);
 
-const taskRoute = require('./routes/task.routes');
-app.use('/v1/task', taskRoute);
+// const taskRoute = require('./routes/task.routes');
+// app.use('/v1/task', taskRoute);
 
-const pathRoute = require('./routes/path.routes');
-app.use('/v1/path', pathRoute);
+// const pathRoute = require('./routes/path.routes');
+// app.use('/v1/path', pathRoute);
 
-const mindmapRoute = require('./routes/mindmap.routes');
-app.use('/v1/mindmap', mindmapRoute);
+// const mindmapRoute = require('./routes/mindmap.routes');
+// app.use('/v1/mindmap', mindmapRoute);
 
 // * PORT
 const port: number = 8080;
