@@ -14,6 +14,10 @@ import {
     Panel,
     type Connection,
     addEdge,
+    Handle,
+    Position,
+    Controls,
+    MiniMap,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
@@ -58,12 +62,25 @@ const SECTION = [
     },
 ];
 
-// Custom node component with better styling
-const CustomNode = ({data, id}: {data: {label: string}; id: string}) => {
+// Custom node component with better styling and handles
+const CustomNode = ({ data, isConnectable }: { data: { label: string }, isConnectable: boolean }) => {
     return (
-        <div className="px-4 py-2 shadow-md rounded-md border-2 text-center min-w-[180px] max-w-[250px] bg-white border-purple-200 hover:border-purple-400 transition-colors">
-            <div className="truncate text-sm font-medium text-slate-800">{data.label}</div>
-        </div>
+        <>
+            <Handle
+                type="target"
+                position={Position.Top}
+                isConnectable={isConnectable}
+            />
+            <div className="px-4 py-2 shadow-md rounded-md border-2 text-center min-w-[180px] max-w-[250px] bg-white border-purple-400 hover:border-purple-600 transition-colors">
+                <div className="text-xs font-bold text-slate-800">{data.label}</div>
+            </div>
+            <Handle
+                type="source"
+                position={Position.Bottom}
+                id="a"
+                isConnectable={isConnectable}
+            />
+        </>
     );
 };
 
@@ -72,38 +89,38 @@ const initialNodes: Node[] = [
     {
         id: '1',
         type: 'custom',
-        position: {x: 0, y: 0},
-        data: {label: 'AI Learning'},
+        position: {x: 250, y: 0},
+        data: {label: 'Learning Fundamentals'},
     },
     {
         id: '2',
         type: 'custom',
-        position: {x: -150, y: 100},
-        data: {label: 'Blockchain Rewards'},
+        position: {x: 50, y: 150},
+        data: {label: 'Skill Assessment'},
     },
     {
         id: '3',
         type: 'custom',
-        position: {x: 150, y: 100},
-        data: {label: 'Personalized Tasks'},
+        position: {x: 450, y: 150},
+        data: {label: 'Knowledge Building'},
     },
     {
         id: '4',
         type: 'custom',
-        position: {x: -200, y: 200},
-        data: {label: 'Progress Tracking'},
+        position: {x: 50, y: 300},
+        data: {label: 'Practical Application'},
     },
     {
         id: '5',
         type: 'custom',
-        position: {x: 0, y: 200},
-        data: {label: 'Community Learning'},
+        position: {x: 250, y: 300},
+        data: {label: 'Peer Learning'},
     },
     {
         id: '6',
         type: 'custom',
-        position: {x: 200, y: 200},
-        data: {label: 'Knowledge Sharing'},
+        position: {x: 450, y: 300},
+        data: {label: 'Mastery Achievement'},
     },
 ];
 
@@ -113,118 +130,77 @@ const initialEdges: Edge[] = [
         source: '1',
         target: '2',
         animated: true,
-        style: {stroke: '#a855f7', strokeWidth: 3},
-        markerEnd: {
-            type: MarkerType.ArrowClosed,
-            width: 25,
-            height: 25,
-            color: '#a855f7',
-        },
+        style: {stroke: '#a855f7', strokeWidth: 1},
+        // markerEnd: {
+        //     type: MarkerType.ArrowClosed,
+        //     width: 25,
+        //     height: 25,
+        //     color: '#a855f7',
+        // },
     },
     {
         id: 'e1-3',
         source: '1',
         target: '3',
         animated: true,
-        style: {stroke: '#a855f7', strokeWidth: 3},
-        markerEnd: {
-            type: MarkerType.ArrowClosed,
-            width: 25,
-            height: 25,
-            color: '#a855f7',
-        },
+        style: {stroke: '#a855f7', strokeWidth: 1},
+       
     },
     {
         id: 'e2-4',
         source: '2',
         target: '4',
         animated: true,
-        style: {stroke: '#a855f7', strokeWidth: 3},
-        markerEnd: {
-            type: MarkerType.ArrowClosed,
-            width: 25,
-            height: 25,
-            color: '#a855f7',
-        },
+        style: {stroke: '#a855f7', strokeWidth: 1},
+       
     },
     {
         id: 'e2-5',
         source: '2',
         target: '5',
         animated: true,
-        style: {stroke: '#a855f7', strokeWidth: 3},
-        markerEnd: {
-            type: MarkerType.ArrowClosed,
-            width: 25,
-            height: 25,
-            color: '#a855f7',
-        },
+        style: {stroke: '#a855f7', strokeWidth: 1},
+       
     },
     {
         id: 'e3-5',
         source: '3',
         target: '5',
         animated: true,
-        style: {stroke: '#a855f7', strokeWidth: 3},
-        markerEnd: {
-            type: MarkerType.ArrowClosed,
-            width: 25,
-            height: 25,
-            color: '#a855f7',
-        },
+        style: {stroke: '#a855f7', strokeWidth: 1},
+       
     },
     {
         id: 'e3-6',
         source: '3',
         target: '6',
         animated: true,
-        style: {stroke: '#a855f7', strokeWidth: 3},
-        markerEnd: {
-            type: MarkerType.ArrowClosed,
-            width: 25,
-            height: 25,
-            color: '#a855f7',
-        },
+        style: {stroke: '#a855f7', strokeWidth: 1},
+       
     },
-    // Yeni bağlantılar ekliyorum
     {
         id: 'e4-5',
         source: '4',
         target: '5',
         animated: true,
-        style: {stroke: '#a855f7', strokeWidth: 3},
-        markerEnd: {
-            type: MarkerType.ArrowClosed,
-            width: 25,
-            height: 25,
-            color: '#a855f7',
-        },
+        style: {stroke: '#a855f7', strokeWidth: 1},
+       
     },
     {
         id: 'e4-6',
         source: '4',
         target: '6',
         animated: true,
-        style: {stroke: '#a855f7', strokeWidth: 3},
-        markerEnd: {
-            type: MarkerType.ArrowClosed,
-            width: 25,
-            height: 25,
-            color: '#a855f7',
-        },
+        style: {stroke: '#a855f7', strokeWidth: 1},
+       
     },
     {
         id: 'e5-6',
         source: '5',
         target: '6',
         animated: true,
-        style: {stroke: '#a855f7', strokeWidth: 3},
-        markerEnd: {
-            type: MarkerType.ArrowClosed,
-            width: 25,
-            height: 25,
-            color: '#a855f7',
-        },
+        style: {stroke: '#a855f7', strokeWidth: 1},
+       
     },
 ];
 
@@ -237,13 +213,26 @@ export default function LandingPage() {
     const [edges, setEdges] = useState<Edge[]>(initialEdges);
 
     // Node types for React Flow
+    const nodeTypes = useMemo(() => ({
+        custom: CustomNode
+    }), []);
 
     // React Flow event handlers
     const onNodesChange = useCallback((changes: NodeChange[]) => setNodes(nds => applyNodeChanges(changes, nds)), []);
 
     const onEdgesChange = useCallback((changes: EdgeChange[]) => setEdges(eds => applyEdgeChanges(changes, eds)), []);
 
-    const onConnect = useCallback((params: Connection) => setEdges(eds => addEdge(params, eds)), []);
+    const onConnect = useCallback((params: Connection) => setEdges(eds => addEdge({
+        ...params,
+        animated: true,
+        style: {stroke: '#a855f7', strokeWidth: 3},
+        markerEnd: {
+            type: MarkerType.ArrowClosed,
+            width: 25,
+            height: 25,
+            color: '#a855f7',
+        },
+    }, eds)), []);
 
     useEffect(() => {
         setMounted(true);
@@ -359,6 +348,7 @@ export default function LandingPage() {
                                 onNodesChange={onNodesChange}
                                 onEdgesChange={onEdgesChange}
                                 onConnect={onConnect}
+                                nodeTypes={nodeTypes}
                                 fitView
                                 minZoom={0.5}
                                 maxZoom={1.5}
@@ -372,9 +362,9 @@ export default function LandingPage() {
                                 <Background color="#6b21a8" gap={16} size={1} />
                                 <Panel
                                     position="top-center"
-                                    className="bg-slate-900/70 backdrop-blur-sm border border-purple-500/20 rounded-lg p-2 text-sm text-purple-300"
+                                    className="bg-slate-900/70 backdrop-blur-sm border border-purple-500/20 rounded-lg p-2 text-sm text-purple-300 flex justify-center items-center min-w-[200px] text-center"
                                 >
-                                    Interactive Learning Path Visualization
+                                    Your Learning Pathway
                                 </Panel>
                             </ReactFlow>
 
