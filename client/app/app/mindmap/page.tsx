@@ -176,7 +176,7 @@ export default function Mindmap() {
         // Add custom styling to edges
         const styledEdges = rawEdges.map(edge => ({
             ...edge,
-            type: 'bazier', // Use our custom edge component
+            type: 'smoothstep', // Use our custom edge component
             animated: true,
             style: {
                 stroke: '#1a365d',
