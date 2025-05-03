@@ -39,7 +39,6 @@ import { usePathname } from "next/navigation"
 const defaultData = {
   user: {
     name: "Guest",
-    email: "guest@example.com",
     avatar: "/avatars/default.jpg",
     opencampus: {
       id: "--",
@@ -152,7 +151,6 @@ const defaultData = {
 interface DecodedToken {
   sub: string;
   edu_username: string;
-  email: string;
   name: string;
   [key: string]: any;
 }
@@ -230,7 +228,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         // Extract user data from token
         setUserData({
           name: decodedToken.name || decodedToken.edu_username || "User",
-          email: decodedToken.email,
           avatar: "/avatars/shadcn.jpg", // Default avatar
           opencampus: {
             id: decodedToken.sub || "--",
