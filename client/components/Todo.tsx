@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, CheckCircle, Circle, Info, X, ExternalLink } from 'lucide-react';
+import { Plus, Trash2, CheckCircle, Circle, Info, X, ExternalLink, Edit, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -27,10 +27,22 @@ interface DrawerProps {
   open: boolean;
   onClose: () => void;
   concept: Concept | null;
+  onResourceAdd: (conceptId: string, resource: Resource) => void;
+  onResourceDelete: (conceptId: string, resourceIndex: number) => void;
 }
 
-const ConceptDrawer: React.FC<DrawerProps> = ({ open, onClose, concept }) => {
+const ConceptDrawer: React.FC<DrawerProps> = ({ open, onClose, concept, onResourceAdd, onResourceDelete }) => {
+  const [newResource, setNewResource] = useState<Resource>({ title: '', description: '', url: '' });
+  const [isAddingResource, setIsAddingResource] = useState(false);
+
   if (!concept) return null;
+
+  const handleSubmitResource = () => {
+    if (!newResource.title || !newResource.url) return;
+    onResourceAdd(concept.id, newResource);
+    setNewResource({ title: '', description: '', url: '' });
+    setIsAddingResource(false);
+  };
 
   return (
     <>
@@ -76,18 +88,85 @@ const ConceptDrawer: React.FC<DrawerProps> = ({ open, onClose, concept }) => {
           
           {/* Resources section */}
           <div>
-            <h3 className="text-md font-medium text-gray-800 mb-3">Learning resources:</h3>
+            <div className="flex justify-between items-center mb-3">
+              <h3 className="text-md font-medium text-gray-800">Learning resources:</h3>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setIsAddingResource(true)}
+                className="flex items-center text-xs"
+              >
+                <Plus className="h-3 w-3 mr-1" />
+                Add Resource
+              </Button>
+            </div>
+
+            {/* Add resource form */}
+            {isAddingResource && (
+              <div className="p-4 mb-4 border border-indigo-200 rounded-lg bg-indigo-50">
+                <h4 className="text-sm font-medium mb-2 text-indigo-700">Add New Resource</h4>
+                <div className="space-y-3">
+                  <Input
+                    placeholder="Resource Title"
+                    value={newResource.title}
+                    onChange={(e) => setNewResource({...newResource, title: e.target.value})}
+                    className="w-full text-sm"
+                  />
+                  <Input
+                    placeholder="Description"
+                    value={newResource.description}
+                    onChange={(e) => setNewResource({...newResource, description: e.target.value})}
+                    className="w-full text-sm"
+                  />
+                  <Input
+                    placeholder="URL (https://...)"
+                    value={newResource.url}
+                    onChange={(e) => setNewResource({...newResource, url: e.target.value})}
+                    className="w-full text-sm"
+                  />
+                  <div className="flex justify-end space-x-2 pt-2">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => setIsAddingResource(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      onClick={handleSubmitResource}
+                      disabled={!newResource.title || !newResource.url}
+                    >
+                      Add
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {concept.resources && concept.resources.length > 0 ? (
               <div className="space-y-4">
                 {concept.resources.map((resource: Resource, index: number) => (
                   <div 
                     key={index} 
-                    className="p-4 rounded-lg border border-gray-200 hover:border-indigo-300 hover:shadow-md transition-all cursor-pointer"
-                    onClick={() => window.open(resource.url, '_blank')}
+                    className="p-4 rounded-lg border border-gray-200 hover:border-indigo-300 hover:shadow-md transition-all relative group"
                   >
                     <div className="flex justify-between items-start">
                       <h3 className="font-medium text-indigo-600 mb-1">{resource.title}</h3>
-                      <ExternalLink className="h-4 w-4 text-gray-400" />
+                      <div className="flex space-x-1">
+                        <button 
+                          onClick={() => window.open(resource.url, '_blank')}
+                          className="p-1 rounded-full hover:bg-gray-100"
+                        >
+                          <ExternalLink className="h-4 w-4 text-gray-400" />
+                        </button>
+                        <button 
+                          onClick={() => onResourceDelete(concept.id, index)}
+                          className="p-1 rounded-full hover:bg-gray-100 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <Trash2 className="h-4 w-4 text-red-400" />
+                        </button>
+                      </div>
                     </div>
                     <p className="text-sm text-gray-600">{resource.description}</p>
                     <div className="mt-2 text-xs text-gray-400 truncate">{resource.url}</div>
@@ -112,6 +191,31 @@ export default function Todo() {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedConcept, setSelectedConcept] = useState<Concept | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [isAddingManually, setIsAddingManually] = useState(false);
+  const [newConcept, setNewConcept] = useState<Omit<Concept, 'id'>>({
+    title: '',
+    description: '',
+    completed: false,
+    resources: []
+  });
+  const [editingConcept, setEditingConcept] = useState<string | null>(null);
+
+  // Load todos from localStorage on initial render
+  useEffect(() => {
+    const savedConcepts = localStorage.getItem('todo-concepts');
+    if (savedConcepts) {
+      try {
+        setConcepts(JSON.parse(savedConcepts));
+      } catch (e) {
+        console.error('Failed to parse saved concepts', e);
+      }
+    }
+  }, []);
+
+  // Save todos to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('todo-concepts', JSON.stringify(concepts));
+  }, [concepts]);
 
   // Sample resources for demonstration
   const sampleResources: { [key: string]: Resource[] } = {
@@ -240,7 +344,8 @@ export default function Todo() {
         resources: getResourcesForConcept(title)
       }));
       
-      setConcepts(newConcepts);
+      setConcepts(prevConcepts => [...prevConcepts, ...newConcepts]);
+      setTodoText('');
       setIsLoading(false);
     }, 1500);
   };
@@ -261,6 +366,61 @@ export default function Todo() {
   // Delete a concept
   const deleteConcept = (id: string) => {
     setConcepts(concepts.filter(concept => concept.id !== id));
+  };
+
+  // Add a concept manually
+  const addConceptManually = () => {
+    if (!newConcept.title) return;
+    
+    const concept: Concept = {
+      ...newConcept,
+      id: `manual-${Date.now()}`,
+    };
+    
+    setConcepts([...concepts, concept]);
+    setNewConcept({
+      title: '',
+      description: '',
+      completed: false,
+      resources: []
+    });
+    setIsAddingManually(false);
+  };
+
+  // Start editing a concept
+  const startEditingConcept = (concept: Concept) => {
+    setEditingConcept(concept.id);
+  };
+
+  // Save edited concept
+  const saveEditedConcept = (id: string, updatedTitle: string, updatedDescription: string) => {
+    if (!updatedTitle) return;
+    
+    setConcepts(concepts.map(concept => 
+      concept.id === id 
+        ? { ...concept, title: updatedTitle, description: updatedDescription } 
+        : concept
+    ));
+    
+    setEditingConcept(null);
+  };
+
+  // Add resource to a concept
+  const addResourceToConcept = (conceptId: string, resource: Resource) => {
+    setConcepts(concepts.map(concept => 
+      concept.id === conceptId 
+        ? { ...concept, resources: [...concept.resources, resource] } 
+        : concept
+    ));
+  };
+
+  // Delete resource from a concept
+  const deleteResourceFromConcept = (conceptId: string, resourceIndex: number) => {
+    setConcepts(concepts.map(concept => 
+      concept.id === conceptId 
+        ? { ...concept, resources: concept.resources.filter((_, i) => i !== resourceIndex) } 
+        : concept
+    ));
   };
 
   return (
@@ -303,69 +463,165 @@ export default function Todo() {
         </div>
       </div>
       
+      {/* Manual concept addition */}
+      <div className="mb-6">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-semibold text-gray-700">Your Learning Concepts</h2>
+          <Button 
+            onClick={() => setIsAddingManually(!isAddingManually)}
+            variant="outline"
+            size="sm"
+            className="flex items-center"
+          >
+            {isAddingManually ? 'Cancel' : (
+              <>
+                <Plus className="h-4 w-4 mr-1" />
+                Add Manually
+              </>
+            )}
+          </Button>
+        </div>
+        
+        {isAddingManually && (
+          <div className="p-5 border border-indigo-200 rounded-lg bg-indigo-50 mb-6">
+            <h3 className="text-md font-medium mb-3 text-indigo-700">Add New Concept</h3>
+            <div className="space-y-3">
+              <div>
+                <label className="text-sm text-gray-600 mb-1 block">Title</label>
+                <Input
+                  placeholder="Concept Title"
+                  value={newConcept.title}
+                  onChange={(e) => setNewConcept({...newConcept, title: e.target.value})}
+                  className="w-full"
+                />
+              </div>
+              <div>
+                <label className="text-sm text-gray-600 mb-1 block">Description</label>
+                <Input
+                  placeholder="Description"
+                  value={newConcept.description}
+                  onChange={(e) => setNewConcept({...newConcept, description: e.target.value})}
+                  className="w-full"
+                />
+              </div>
+              <div className="flex justify-end pt-2">
+                <Button 
+                  onClick={addConceptManually}
+                  disabled={!newConcept.title}
+                >
+                  Add Concept
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+      
       {/* Concepts section */}
       <div className="space-y-4">
         {concepts.length > 0 ? (
-          <>
-            <h2 className="text-xl font-semibold text-gray-700 mb-4">Your Learning Concepts</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {concepts.map(concept => (
-                <div
-                  key={concept.id}
-                  className={cn(
-                    "p-4 rounded-lg border-2 hover:border-indigo-300 hover:shadow-md transition-all relative",
-                    concept.completed ? "bg-green-50 border-green-200" : "bg-white border-gray-200"
-                  )}
-                >
-                  <div className="flex justify-between items-start mb-2">
-                    <h3 
-                      className={cn(
-                        "font-medium text-lg cursor-pointer",
-                        concept.completed ? "text-green-700 line-through" : "text-indigo-600"
-                      )}
-                      onClick={() => handleConceptClick(concept)}
-                    >
-                      {concept.title}
-                    </h3>
-                    <div className="flex space-x-1">
-                      <button
-                        onClick={() => toggleConceptComplete(concept.id)}
-                        className="p-1 rounded-full hover:bg-gray-100"
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {concepts.map(concept => (
+              <div
+                key={concept.id}
+                className={cn(
+                  "p-4 rounded-lg border-2 hover:border-indigo-300 hover:shadow-md transition-all relative",
+                  concept.completed ? "bg-green-50 border-green-200" : "bg-white border-gray-200"
+                )}
+              >
+                {editingConcept === concept.id ? (
+                  <>
+                    <Input
+                      className="mb-2 font-medium"
+                      value={concept.title}
+                      onChange={(e) => setConcepts(concepts.map(c => 
+                        c.id === concept.id ? { ...c, title: e.target.value } : c
+                      ))}
+                    />
+                    <Input
+                      className="mb-3 text-sm"
+                      value={concept.description}
+                      onChange={(e) => setConcepts(concepts.map(c => 
+                        c.id === concept.id ? { ...c, description: e.target.value } : c
+                      ))}
+                    />
+                    <div className="flex justify-end">
+                      <Button
+                        size="sm"
+                        onClick={() => setEditingConcept(null)}
+                        variant="outline"
+                        className="mr-2"
                       >
-                        {concept.completed ? 
-                          <CheckCircle className="h-5 w-5 text-green-500" /> : 
-                          <Circle className="h-5 w-5 text-gray-400" />
-                        }
-                      </button>
-                      <button
-                        onClick={() => deleteConcept(concept.id)}
-                        className="p-1 rounded-full hover:bg-gray-100"
+                        Cancel
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={() => saveEditedConcept(concept.id, concept.title, concept.description)}
+                        disabled={!concept.title}
                       >
-                        <Trash2 className="h-5 w-5 text-red-400" />
+                        <Save className="h-4 w-4 mr-1" />
+                        Save
+                      </Button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex justify-between items-start mb-2">
+                      <h3 
+                        className={cn(
+                          "font-medium text-lg cursor-pointer",
+                          concept.completed ? "text-green-700 line-through" : "text-indigo-600"
+                        )}
+                        onClick={() => handleConceptClick(concept)}
+                      >
+                        {concept.title}
+                      </h3>
+                      <div className="flex space-x-1">
+                        <button
+                          onClick={() => startEditingConcept(concept)}
+                          className="p-1 rounded-full hover:bg-gray-100"
+                        >
+                          <Edit className="h-5 w-5 text-gray-400" />
+                        </button>
+                        <button
+                          onClick={() => toggleConceptComplete(concept.id)}
+                          className="p-1 rounded-full hover:bg-gray-100"
+                        >
+                          {concept.completed ? 
+                            <CheckCircle className="h-5 w-5 text-green-500" /> : 
+                            <Circle className="h-5 w-5 text-gray-400" />
+                          }
+                        </button>
+                        <button
+                          onClick={() => deleteConcept(concept.id)}
+                          className="p-1 rounded-full hover:bg-gray-100"
+                        >
+                          <Trash2 className="h-5 w-5 text-red-400" />
+                        </button>
+                      </div>
+                    </div>
+                    
+                    <p className="text-gray-600 text-sm mb-3 line-clamp-2">
+                      {concept.description}
+                    </p>
+                    
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs text-gray-500">
+                        {concept.resources.length} resources available
+                      </span>
+                      <button
+                        onClick={() => handleConceptClick(concept)}
+                        className="flex items-center text-xs text-indigo-600 hover:text-indigo-800"
+                      >
+                        <Info className="h-3 w-3 mr-1" />
+                        Learn more
                       </button>
                     </div>
-                  </div>
-                  
-                  <p className="text-gray-600 text-sm mb-3 line-clamp-2">
-                    {concept.description}
-                  </p>
-                  
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs text-gray-500">
-                      {concept.resources.length} resources available
-                    </span>
-                    <button
-                      onClick={() => handleConceptClick(concept)}
-                      className="flex items-center text-xs text-indigo-600 hover:text-indigo-800"
-                    >
-                      <Info className="h-3 w-3 mr-1" />
-                      Learn more
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </>
+                  </>
+                )}
+              </div>
+            ))}
+          </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-12 text-gray-500">
             {isLoading ? (
@@ -394,6 +650,8 @@ export default function Todo() {
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
         concept={selectedConcept}
+        onResourceAdd={addResourceToConcept}
+        onResourceDelete={deleteResourceFromConcept}
       />
     </div>
   );
