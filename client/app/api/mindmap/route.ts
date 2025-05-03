@@ -124,176 +124,23 @@ export async function POST(request: Request) {
 
     console.log("Sending request to Gemini API for topic:", topic);
     
-    // Call Gemini API with error handling
-    let response;
-    try {
-      response = await ai.models.generateContent({
-        model: "gemini-2.0-flash",
-        contents: [{ role: "user", parts: [{ text: mindmapGeneratorPrompt }] }],
-      });
-    } catch (apiError) {
-      console.error("Error calling Gemini API:", apiError);
-      return NextResponse.json(
-        { error: "Failed to communicate with the AI model. Please try again later." },
-        { status: 500 }
-      );
-    }
-
-    // Validate response exists and has expected structure
-    if (!response || !response.candidates || response.candidates.length === 0) {
-      console.error("Empty response from Gemini API");
-      return NextResponse.json(
-        { error: "Failed to get response from AI" },
-        { status: 500 }
-      );
-    }
-
-    // Process the response text
-    const responseText = response.text || "";
-    console.log("Raw response:", responseText.substring(0, 200) + "...");
+    // Set a controller for timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 12000); // 12 second timeout
     
-    // Early rejection of obvious error messages or non-JSON responses
-    if (
-      responseText.trim().startsWith("An error") || 
-      responseText.trim().startsWith("I apologize") ||
-      !responseText.includes("{")
-    ) {
-      console.error("Response appears to be an error message instead of JSON:", responseText);
-      return NextResponse.json(
-        { error: "The AI model returned an error response" },
-        { status: 500 }
-      );
-    }
-    
-    // Extract JSON content from response
-    let jsonContent = "";
-    
-    // Check if response contains a code block with JSON
-    const codeBlockMatch = responseText.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
-    if (codeBlockMatch && codeBlockMatch[1]) {
-      console.log("Found JSON in code block");
-      jsonContent = codeBlockMatch[1];
-    } else {
-      // Try to find a complete JSON object
-      const jsonMatch = responseText.match(/(\{[\s\S]*\})/);
-      if (jsonMatch && jsonMatch[1]) {
-        console.log("Found JSON object in response");
-        jsonContent = jsonMatch[1];
-      } else {
-        // No JSON object found, reject the response
-        console.error("No JSON object found in response");
-        return NextResponse.json(
-          { error: "The AI model did not return properly formatted data" },
-          { status: 500 }
-        );
-      }
-    }
-    
-    // Try to parse and fix JSON
-    let mindmapData;
-    try {
-      // First attempt: parse as-is
-      try {
-        mindmapData = JSON.parse(jsonContent);
-        console.log("Successfully parsed JSON");
-      } catch (parseError) {
-        console.warn("Initial JSON parsing failed:", parseError);
-        
-        // Fix 1: Balance braces and brackets
-        let fixedJson = jsonContent;
-        
-        // Count and fix unbalanced brackets
-        const openBraces = (jsonContent.match(/\{/g) || []).length;
-        const closeBraces = (jsonContent.match(/\}/g) || []).length;
-        const openBrackets = (jsonContent.match(/\[/g) || []).length;
-        const closeBrackets = (jsonContent.match(/\]/g) || []).length;
-        
-        if (openBraces > closeBraces) {
-          fixedJson += "}".repeat(openBraces - closeBraces);
-        }
-        
-        if (openBrackets > closeBrackets) {
-          fixedJson += "]".repeat(openBrackets - closeBrackets);
-        }
-        
-        // Fix 2: Remove trailing commas
-        fixedJson = fixedJson
-          .replace(/,\s*}/g, '}')
-          .replace(/,\s*]/g, ']');
-        
-        // Fix 3: Fix common JSON syntax issues
-        fixedJson = fixedJson
-          .replace(/([^\\])"([^"]*)"/g, '$1\\"$2\\"') // Escape unescaped quotes in strings
-          .replace(/([^\\])'([^']*)'/g, '$1"$2"') // Convert single quotes to double quotes
-          .replace(/:\s*undefined\s*([,\}])/g, ':null$1'); // Replace undefined with null
-        
-        // Try to parse the fixed JSON
-        try {
-          mindmapData = JSON.parse(fixedJson);
-          console.log("Successfully parsed fixed JSON");
-        } catch (fixError) {
-          // If still can't parse, throw to fallback handler
-          throw new Error("Could not parse JSON after fixes");
-        }
-      }
-      
-      // Validate the parsed data has expected structure
-      if (
-        !mindmapData || 
-        !mindmapData.nodes || 
-        !Array.isArray(mindmapData.nodes) || 
-        !mindmapData.edges || 
-        !Array.isArray(mindmapData.edges)
-      ) {
-        throw new Error("Invalid mindmap data structure");
-      }
-      
-      // Ensure we have enough edges by creating default connections
-      if (mindmapData.edges.length < mindmapData.nodes.length - 1) {
-        console.log("Not enough edges detected, adding default connections");
-        
-        // Reset edges array and create connections from node 1 to all others
-        mindmapData.edges = [];
-        for (let i = 2; i <= mindmapData.nodes.length; i++) {
-          mindmapData.edges.push({
-            id: `e${i-1}`,
-            source: "1",
-            target: i.toString(),
-            type: "smoothstep",
-            animated: true
-          });
-        }
-      }
-      
-      // Standardize edge format
-      mindmapData.edges = mindmapData.edges.map((edge: any, index: number) => {
-        return {
-          id: `e${index + 1}`,
-          source: edge.source,
-          target: edge.target,
-          type: "smoothstep",
-          animated: true
-        };
-      });
-      
-      console.log(`Generated mindmap with ${mindmapData.nodes.length} nodes and ${mindmapData.edges.length} edges`);
-      return NextResponse.json({ result: mindmapData });
-      
-    } catch (e) {
-      console.error("Failed to process mindmap data:", e);
-      
-      // Provide fallback data for a better user experience
-      const fallbackData = {
+    // Prepare fallback data for timeouts or errors
+    const generateFallbackData = () => {
+      return {
         nodes: [
           {
             id: '1',
             data: { 
-              label: topic || 'Main Topic',
-              description: 'This is a fallback mindmap. The AI was unable to generate a proper response for your topic. Try a different topic or try again later.',
+              label: topic || 'Topic',
+              description: 'This is a simplified mindmap. The AI response took too long or encountered an error.',
               resources: [
                 {
                   title: 'Wikipedia',
-                  description: 'Wikipedia may have information about this topic.',
+                  description: 'Learn more about this topic',
                   url: `https://en.wikipedia.org/wiki/${encodeURIComponent(topic || 'Main_Topic')}`
                 }
               ]
@@ -303,8 +150,8 @@ export async function POST(request: Request) {
           {
             id: '2',
             data: { 
-              label: 'Try another topic',
-              description: 'If this topic is not working, try a more specific or common topic like "JavaScript", "Machine Learning", or "Digital Marketing".',
+              label: 'Try a simpler topic',
+              description: 'Try a more specific topic or a shorter query.',
               resources: []
             },
             position: { x: 600, y: 400 }
@@ -314,11 +161,191 @@ export async function POST(request: Request) {
           { id: 'e1', source: '1', target: '2', type: 'smoothstep', animated: true }
         ]
       };
+    };
+    
+    try {
+      let response;
+      try {
+        response = await ai.models.generateContent({
+          model: "gemini-2.0-flash",
+          contents: [{ role: "user", parts: [{ text: mindmapGeneratorPrompt }] }],
+        });
+        clearTimeout(timeoutId); // Clear the timeout if successful
+      } catch (error: unknown) {
+        clearTimeout(timeoutId);
+        console.error("Error calling Gemini API:", error);
+        
+        // Safely cast to Error type for property access
+        const apiError = error as { name?: string; message?: string };
+        
+        // Check if it's a timeout or abort error
+        if (apiError.name === 'AbortError' || apiError.message?.includes('timeout')) {
+          console.log("Request timed out, providing fallback data");
+          return NextResponse.json({
+            result: generateFallbackData(),
+            error: "The request took too long. Displaying a simplified mindmap instead."
+          });
+        }
+        
+        return NextResponse.json(
+          { error: "Failed to communicate with the AI model. Please try again later." },
+          { status: 500 }
+        );
+      }
+
+      if (!response || !response.candidates || response.candidates.length === 0) {
+        console.error("Empty response from Gemini API");
+        return NextResponse.json(
+          { error: "Failed to get response from AI" },
+          { status: 500 }
+        );
+      }
+
+      // Process the response text
+      const responseText = response.text || "";
+      console.log("Raw response:", responseText.substring(0, 200) + "...");
       
-      return NextResponse.json({
-        result: fallbackData,
-        error: "Could not create mindmap for this topic. Try another topic."
-      });
+      // Early rejection of obvious error messages or non-JSON responses
+      if (
+        responseText.trim().startsWith("An error") || 
+        responseText.trim().startsWith("I apologize") ||
+        !responseText.includes("{")
+      ) {
+        console.error("Response appears to be an error message instead of JSON:", responseText);
+        return NextResponse.json(
+          { error: "The AI model returned an error response" },
+          { status: 500 }
+        );
+      }
+      
+      // Extract JSON content from response
+      let jsonContent = "";
+      
+      // Check if response contains a code block with JSON
+      const codeBlockMatch = responseText.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
+      if (codeBlockMatch && codeBlockMatch[1]) {
+        console.log("Found JSON in code block");
+        jsonContent = codeBlockMatch[1];
+      } else {
+        // Try to find a complete JSON object
+        const jsonMatch = responseText.match(/(\{[\s\S]*\})/);
+        if (jsonMatch && jsonMatch[1]) {
+          console.log("Found JSON object in response");
+          jsonContent = jsonMatch[1];
+        } else {
+          // No JSON object found, reject the response
+          console.error("No JSON object found in response");
+          return NextResponse.json(
+            { error: "The AI model did not return properly formatted data" },
+            { status: 500 }
+          );
+        }
+      }
+      
+      // Try to parse and fix JSON
+      let mindmapData;
+      try {
+        // First attempt: parse as-is
+        try {
+          mindmapData = JSON.parse(jsonContent);
+          console.log("Successfully parsed JSON");
+        } catch (parseError) {
+          console.warn("Initial JSON parsing failed:", parseError);
+          
+          // Fix 1: Balance braces and brackets
+          let fixedJson = jsonContent;
+          
+          // Count and fix unbalanced brackets
+          const openBraces = (jsonContent.match(/\{/g) || []).length;
+          const closeBraces = (jsonContent.match(/\}/g) || []).length;
+          const openBrackets = (jsonContent.match(/\[/g) || []).length;
+          const closeBrackets = (jsonContent.match(/\]/g) || []).length;
+          
+          if (openBraces > closeBraces) {
+            fixedJson += "}".repeat(openBraces - closeBraces);
+          }
+          
+          if (openBrackets > closeBrackets) {
+            fixedJson += "]".repeat(openBrackets - closeBrackets);
+          }
+          
+          // Fix 2: Remove trailing commas
+          fixedJson = fixedJson
+            .replace(/,\s*}/g, '}')
+            .replace(/,\s*]/g, ']');
+          
+          // Fix 3: Fix common JSON syntax issues
+          fixedJson = fixedJson
+            .replace(/([^\\])"([^"]*)"/g, '$1\\"$2\\"') // Escape unescaped quotes in strings
+            .replace(/([^\\])'([^']*)'/g, '$1"$2"') // Convert single quotes to double quotes
+            .replace(/:\s*undefined\s*([,\}])/g, ':null$1'); // Replace undefined with null
+          
+          // Try to parse the fixed JSON
+          try {
+            mindmapData = JSON.parse(fixedJson);
+            console.log("Successfully parsed fixed JSON");
+          } catch (fixError) {
+            // If still can't parse, throw to fallback handler
+            throw new Error("Could not parse JSON after fixes");
+          }
+        }
+        
+        // Validate the parsed data has expected structure
+        if (
+          !mindmapData || 
+          !mindmapData.nodes || 
+          !Array.isArray(mindmapData.nodes) || 
+          !mindmapData.edges || 
+          !Array.isArray(mindmapData.edges)
+        ) {
+          throw new Error("Invalid mindmap data structure");
+        }
+        
+        // Ensure we have enough edges by creating default connections
+        if (mindmapData.edges.length < mindmapData.nodes.length - 1) {
+          console.log("Not enough edges detected, adding default connections");
+          
+          // Reset edges array and create connections from node 1 to all others
+          mindmapData.edges = [];
+          for (let i = 2; i <= mindmapData.nodes.length; i++) {
+            mindmapData.edges.push({
+              id: `e${i-1}`,
+              source: "1",
+              target: i.toString(),
+              type: "smoothstep",
+              animated: true
+            });
+          }
+        }
+        
+        // Standardize edge format
+        mindmapData.edges = mindmapData.edges.map((edge: any, index: number) => {
+          return {
+            id: `e${index + 1}`,
+            source: edge.source,
+            target: edge.target,
+            type: "smoothstep",
+            animated: true
+          };
+        });
+        
+        console.log(`Generated mindmap with ${mindmapData.nodes.length} nodes and ${mindmapData.edges.length} edges`);
+        return NextResponse.json({ result: mindmapData });
+        
+      } catch (e) {
+        console.error("Failed to process mindmap data:", e);
+        
+        return NextResponse.json({
+          result: generateFallbackData(),
+          error: "Could not create mindmap for this topic. Try another topic."
+        });
+      }
+    } catch (error) {
+      console.error("General error in mindmap generation:", error);
+      return NextResponse.json(
+        { error: "Failed to process your request. Please try again later." },
+        { status: 500 }
+      );
     }
   } catch (error) {
     console.error("General error in mindmap generation:", error);

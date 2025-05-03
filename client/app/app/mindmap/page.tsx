@@ -274,8 +274,14 @@ export default function Mindmap() {
                 // Save to localStorage for later use
                 localStorage.setItem('mindmapData', JSON.stringify(data.result));
                 
-                // Display success message
-                toast.success('Mindmap generated successfully!');
+                // Display appropriate message
+                if (data.error) {
+                    // This is a fallback result with a warning
+                    toast.warning(data.error);
+                } else {
+                    // Normal success case
+                    toast.success('Mindmap generated successfully!');
+                }
             } else if (data.error) {
                 // Handle specific error from API
                 throw new Error(data.error);
