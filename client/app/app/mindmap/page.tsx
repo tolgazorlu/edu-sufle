@@ -176,8 +176,8 @@ export default function Mindmap() {
         // Add custom styling to edges
         const styledEdges = rawEdges.map(edge => ({
             ...edge,
-            type: 'custom', // Use our custom edge component
-            animated: false,
+            type: 'bazier', // Use our custom edge component
+            animated: true,
             style: {
                 stroke: '#1a365d',
                 strokeWidth: 2,
@@ -253,7 +253,8 @@ export default function Mindmap() {
                             id: `e${i - 1}`,
                             source: '1',
                             target: i.toString(),
-                            type: 'straight',
+                            type: 'bezier',
+                            animated: true,
                         });
                     }
                 }
@@ -366,7 +367,8 @@ export default function Mindmap() {
                                 minZoom={0.2}
                                 style={{backgroundColor: '#F7F9FB'}}
                                 defaultEdgeOptions={{
-                                    type: 'custom',
+                                    type: 'bezier',
+                                    animated: true,
                                 }}
                                 proOptions={{hideAttribution: true}}
                                 disableKeyboardA11y={true}

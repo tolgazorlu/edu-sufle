@@ -77,7 +77,8 @@ export async function POST(request: Request) {
             "id": "e1",
             "source": "1",
             "target": "2",
-            "type": "straight"
+            "type": "bezier",
+            "animated": true
           }
         ]
       }
@@ -91,7 +92,8 @@ export async function POST(request: Request) {
       - ALL nodes must be connected to at least one other node
       - CRITICAL: The central topic (node 1) must connect to EVERY main subtopic
       - EVERY node (except node 1) must have at least one incoming connection
-      - Use "straight" for edge type (not "smoothstep")
+      - Use "bezier" for edge type (not "smoothstep")
+      - Use "animated" for edge animation true
       - Use sequential numbers for edge IDs (e1, e2, e3, etc.)
       - EACH node MUST have a detailed "description" field (3-5 sentences) that explains the concept thoroughly
       - For EACH node, provide 2-4 REAL, EXISTING resources with valid URLs
@@ -408,7 +410,8 @@ export async function POST(request: Request) {
             id: `e${i-1}`,
             source: "1",
             target: i.toString(),
-            type: "straight"
+            type: "bezier",
+            animated: true
           });
         }
       }
@@ -419,7 +422,8 @@ export async function POST(request: Request) {
           id: `e${index + 1}`,
           source: edge.source,
           target: edge.target,
-          type: "straight"  // Use straight type instead of smoothstep
+          type: "bezier",
+          animated: true
         };
       });
       
@@ -663,17 +667,17 @@ export async function POST(request: Request) {
           }
         ],
         edges: [
-          { id: 'e1', source: '1', target: '2', type: 'straight' },
-          { id: 'e2', source: '1', target: '3', type: 'straight' },
-          { id: 'e3', source: '1', target: '4', type: 'straight' },
-          { id: 'e4', source: '1', target: '5', type: 'straight' },
-          { id: 'e5', source: '1', target: '6', type: 'straight' },
-          { id: 'e6', source: '2', target: '3', type: 'straight' },
-          { id: 'e7', source: '2', target: '4', type: 'straight' },
-          { id: 'e8', source: '3', target: '4', type: 'straight' },
-          { id: 'e9', source: '3', target: '6', type: 'straight' },
-          { id: 'e10', source: '4', target: '6', type: 'straight' },
-          { id: 'e11', source: '5', target: '6', type: 'straight' }
+          { id: 'e1', source: '1', target: '2', type: 'bezier', animated: true },
+          { id: 'e2', source: '1', target: '3', type: 'bezier', animated: true },
+          { id: 'e3', source: '1', target: '4', type: 'bezier', animated: true },
+          { id: 'e4', source: '1', target: '5', type: 'bezier', animated: true },
+          { id: 'e5', source: '1', target: '6', type: 'bezier', animated: true },
+          { id: 'e6', source: '2', target: '3', type: 'bezier', animated: true },
+          { id: 'e7', source: '2', target: '4', type: 'bezier', animated: true },
+          { id: 'e8', source: '3', target: '4', type: 'bezier', animated: true },
+          { id: 'e9', source: '3', target: '6', type: 'bezier', animated: true },
+          { id: 'e10', source: '4', target: '6', type: 'bezier', animated: true },
+          { id: 'e11', source: '5', target: '6', type: 'bezier', animated: true }
         ]
       };
       
