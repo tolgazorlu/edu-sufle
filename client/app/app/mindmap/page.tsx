@@ -360,7 +360,7 @@ export default function Mindmap() {
                                 onEdgesChange={onEdgesChange}
                                 onConnect={onConnect}
                                 onNodeClick={onNodeClick}
-                                nodeTypes={nodeTypes}
+                                // nodeTypes={nodeTypes}
                                 edgeTypes={edgeTypes}
                                 fitView
                                 minZoom={0.2}
