@@ -1,6 +1,21 @@
 import { GoogleGenAI } from "@google/genai";
 import { NextResponse } from "next/server";
 
+// Helper function to safely stringify objects for logging
+function safeStringify(obj: any, maxLength = 500): string {
+  try {
+    const str = JSON.stringify(obj, null, 2);
+    if (str.length <= maxLength) {
+      return str;
+    }
+    return str.substring(0, maxLength / 2) + 
+           "\n...[content truncated]...\n" + 
+           str.substring(str.length - maxLength / 2);
+  } catch (e) {
+    return `[Could not stringify object: ${e}]`;
+  }
+}
+
 export async function POST(request: Request) {
   try {
     const { topic } = await request.json();
@@ -90,6 +105,17 @@ export async function POST(request: Request) {
       - Each resource should have a descriptive title and a brief informative description
       - Resources should be diverse in format (mix of articles, videos, documentation, etc.)
       - For programming topics, include resources with practical examples and code samples
+      
+      CRITICAL JSON FORMATTING REQUIREMENTS:
+      - Ensure ALL object properties have double quotes around the keys
+      - Place a comma after EVERY object or array element EXCEPT the last one
+      - DO NOT place commas after the last element in arrays or objects
+      - Make sure all strings are properly enclosed in double quotes
+      - Properly escape any double quotes inside string values with a backslash \\
+      - Ensure all brackets and braces are properly closed and matched
+      - Double-check that each resource object in arrays has a comma after it (except the last one)
+      - Do not use trailing commas
+      - Format the entire JSON as a single complete object
     `;
 
     const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
@@ -99,12 +125,12 @@ export async function POST(request: Request) {
     const response = await ai.models.generateContent({
       model: "gemini-2.0-flash",
       contents: [{ role: "user", parts: [{ text: mindmapGeneratorPrompt }] }],
-      config: {
-        temperature: 0.2,
-        topP: 0.8,
-        topK: 40,
-        maxOutputTokens: 2048,
-      },
+      // config: {
+      //   temperature: 0.2,
+      //   topP: 0.8,
+      //   topK: 40,
+      //   maxOutputTokens: 2048,
+      // },
     });
 
     if (!response || !response.candidates || response.candidates.length === 0) {
@@ -121,17 +147,247 @@ export async function POST(request: Request) {
     const responseText = response.text || "";
     console.log("Raw response:", responseText.substring(0, 200) + "...");
     
-    // Try to extract JSON object if it's wrapped in other text
-    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-    const jsonContent = jsonMatch ? jsonMatch[0] : responseText;
+    // Try to extract JSON object from the response, handling different formats
+    let jsonContent = "";
     
+    // Check if response contains a code block with JSON
+    const codeBlockMatch = responseText.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
+    if (codeBlockMatch && codeBlockMatch[1]) {
+      console.log("Found JSON in code block");
+      jsonContent = codeBlockMatch[1];
+    } else {
+      // Try to find a complete JSON object
+      const jsonMatch = responseText.match(/(\{[\s\S]*\})/);
+      if (jsonMatch && jsonMatch[1]) {
+        console.log("Found JSON object in response");
+        jsonContent = jsonMatch[1];
+      } else {
+        console.log("No clear JSON object found, using full response");
+        jsonContent = responseText;
+      }
+    }
+    
+    // Log if the content might be truncated
+    if (jsonContent.trim().endsWith(",") || 
+        jsonContent.trim().endsWith("[") || 
+        jsonContent.trim().endsWith("{")) {
+      console.warn("Warning: JSON content may be truncated");
+    }
+    
+    let mindmapData;
     try {
-      const mindmapData = JSON.parse(jsonContent);
+      // First attempt: try to parse the JSON as is
+      try {
+        mindmapData = JSON.parse(jsonContent);
+        console.log("Successfully parsed JSON");
+      } catch (parseError: any) {
+        // If parsing fails, attempt to fix common JSON issues
+        console.warn("Initial JSON parsing failed:", parseError.message);
+        console.log("Attempting to fix malformed JSON...");
+        
+        // Fix 1: Try to complete truncated JSON by adding missing closing brackets
+        let fixedJson = jsonContent;
+        
+        // Count opening and closing brackets
+        const openBraces = (jsonContent.match(/\{/g) || []).length;
+        const closeBraces = (jsonContent.match(/\}/g) || []).length;
+        const openBrackets = (jsonContent.match(/\[/g) || []).length;
+        const closeBrackets = (jsonContent.match(/\]/g) || []).length;
+        
+        console.log(`Bracket counts - { : ${openBraces}, } : ${closeBraces}, [ : ${openBrackets}, ] : ${closeBrackets}`);
+        
+        // Add missing closing brackets if needed
+        if (openBraces > closeBraces) {
+          const missingBraces = openBraces - closeBraces;
+          console.log(`Adding ${missingBraces} missing closing braces }`);
+          fixedJson = fixedJson + "}".repeat(missingBraces);
+        }
+        
+        if (openBrackets > closeBrackets) {
+          const missingBrackets = openBrackets - closeBrackets;
+          console.log(`Adding ${missingBrackets} missing closing brackets ]`);
+          fixedJson = fixedJson + "]".repeat(missingBrackets);
+        }
+        
+        // Fix 2: Fix trailing commas in arrays and objects
+        fixedJson = fixedJson
+          .replace(/,\s*}/g, '}')  // Remove trailing commas in objects
+          .replace(/,\s*]/g, ']'); // Remove trailing commas in arrays
+          
+        // Fix 3: Try to identify and fix malformed array elements
+        // This is a more aggressive fix attempt for position-specific errors
+        try {
+          JSON.parse(fixedJson);
+        } catch (positionError: any) {
+          // Extract position from error message if available
+          const posMatch = positionError.message.match(/position (\d+)/);
+          const lineMatch = positionError.message.match(/line (\d+) column (\d+)/);
+          
+          // Special handling for the common error at line 178 near position 9004
+          if (lineMatch && parseInt(lineMatch[1]) === 178) {
+            console.log("Detected specific error pattern at line 178 (common error location)");
+            
+            // Log error position details if available from the position match
+            if (posMatch && posMatch[1]) {
+              const errorPos = parseInt(posMatch[1]);
+              console.log(`JSON error at position ${errorPos}, attempting targeted fix`);
+              console.log(`Character at error position: "${fixedJson.charAt(errorPos)}", char code: ${fixedJson.charCodeAt(errorPos)}`);
+              console.log(`Characters before: "${fixedJson.substring(errorPos-10, errorPos)}"`);
+              console.log(`Characters after: "${fixedJson.substring(errorPos, errorPos+10)}"`);
+            }
+            
+            // Let's try to find the resources array that's likely causing the issue
+            const resourcesRegex = /"resources"\s*:\s*\[([\s\S]*?)\]/g;
+            let resourceMatches;
+            let lastResourceMatch = null;
+            
+            // Find the last resources array before the error position
+            while ((resourceMatches = resourcesRegex.exec(fixedJson)) !== null) {
+              if (resourcesRegex.lastIndex < 9004) {
+                lastResourceMatch = resourceMatches;
+              } else {
+                break;
+              }
+            }
+            
+            if (lastResourceMatch) {
+              console.log("Found resources array near error position");
+              const resourcesContent = lastResourceMatch[1];
+              
+              // Check if there's a missing comma or other issue in the array
+              if (resourcesContent.includes('}{') || resourcesContent.includes('""')) {
+                console.log("Found missing comma in resources array");
+                const fixedResources = resourcesContent.replace(/}(\s*){/g, '},\n$1{').replace(/"(\s*)"/g, '",\n$1"');
+                
+                // Replace the problematic resources array with the fixed one
+                const startIdx = lastResourceMatch.index + lastResourceMatch[0].indexOf('[') + 1;
+                const endIdx = lastResourceMatch.index + lastResourceMatch[0].length - 1;
+                
+                fixedJson = 
+                  fixedJson.substring(0, startIdx) + 
+                  fixedResources + 
+                  fixedJson.substring(endIdx);
+                  
+                console.log("Fixed resources array");
+              }
+            }
+          } else if (posMatch && posMatch[1]) {
+            const errorPos = parseInt(posMatch[1]);
+            console.log(`JSON error at position ${errorPos}, attempting targeted fix`);
+            console.log(`Character at error position: "${fixedJson.charAt(errorPos)}", char code: ${fixedJson.charCodeAt(errorPos)}`);
+            console.log(`Characters before: "${fixedJson.substring(errorPos-10, errorPos)}"`);
+            console.log(`Characters after: "${fixedJson.substring(errorPos, errorPos+10)}"`);
+            
+            // Look at the content around the error position
+            const contextStart = Math.max(0, errorPos - 50);
+            const contextEnd = Math.min(fixedJson.length, errorPos + 50);
+            const errorContext = fixedJson.substring(contextStart, contextEnd);
+            console.log(`Context around error: "${errorContext}"`);
+            
+            // Common error patterns and fixes
+            // 1. Missing commas between array elements or object properties
+            if (errorContext.includes('""') || 
+                errorContext.match(/\}\s*\{/) || 
+                errorContext.match(/"\s*"/)) {
+              console.log("Possible missing comma detected");
+              const before = fixedJson.substring(0, errorPos);
+              const after = fixedJson.substring(errorPos);
+              fixedJson = before + "," + after;
+            }
+            
+            // 2. Unescaped quotes in strings
+            else if (errorContext.match(/([^\\]")([^,\}])/)) {
+              console.log("Possible unescaped quote detected");
+              fixedJson = fixedJson.replace(/([^\\]")([^,\}])/, '$1,$2');
+            }
+            
+            // 3. Extra/stray commas before closing brackets/braces
+            else if (errorContext.match(/,\s*[\]\}]/)) {
+              console.log("Extra comma before closing bracket/brace");
+              fixedJson = fixedJson.replace(/,(\s*[\]\}])/g, '$1');
+            }
+            
+            // 4. Missing quotes around property names
+            else if (errorContext.match(/\{[^"']*?([a-zA-Z0-9_]+):/)) {
+              console.log("Missing quotes around property name");
+              fixedJson = fixedJson.replace(/\{([^"']*?)([a-zA-Z0-9_]+):/g, '{$1"$2":');
+            }
+            
+            // 5. General approach: try removing characters at error position
+            else {
+              console.log("Attempting to fix by removing problematic character");
+              fixedJson = fixedJson.substring(0, errorPos) + fixedJson.substring(errorPos + 1);
+            }
+          }
+        }
+        
+        // Fix 4: Convert JavaScript syntax to JSON syntax if needed
+        // Fix undefined values (not valid in JSON)
+        fixedJson = fixedJson.replace(/:\s*undefined\s*([,\}])/g, ':null$1');
+        
+        // Fix single quotes to double quotes for properties and string values
+        let inString = false;
+        let fixedChars = fixedJson.split('');
+        for (let i = 0; i < fixedChars.length; i++) {
+          if (fixedChars[i] === '"') {
+            // Check if this quote is escaped
+            if (i > 0 && fixedChars[i-1] === '\\') {
+              // This is an escaped quote, don't toggle inString
+              continue;
+            }
+            inString = !inString;
+          } else if (fixedChars[i] === "'" && !inString) {
+            // Convert single quotes to double quotes, but only outside of string literals
+            fixedChars[i] = '"';
+          }
+        }
+        fixedJson = fixedChars.join('');
+        
+        // Log the changes made
+        if (fixedJson !== jsonContent) {
+          console.log("JSON was modified during repair");
+        }
+        
+        // Try parsing the fixed JSON
+        try {
+          mindmapData = JSON.parse(fixedJson);
+          console.log("Successfully parsed fixed JSON");
+        } catch (fixError: any) {
+          // If still fails, try one last desperate measure - manual extraction
+          console.error("Failed to fix JSON:", fixError.message);
+          
+          try {
+            console.log("Attempting last-resort extraction of nodes and edges");
+            
+            // Try to extract nodes array
+            const nodesMatch = fixedJson.match(/"nodes"\s*:\s*(\[[\s\S]*?\])(?=\s*,\s*"edges"|\s*\})/);
+            const edgesMatch = fixedJson.match(/"edges"\s*:\s*(\[[\s\S]*?\])(?=\s*\})/);
+            
+            if (nodesMatch && edgesMatch) {
+              console.log("Extracted nodes and edges arrays directly");
+              
+              // Construct a new JSON object with extracted arrays
+              const manualJson = `{
+                "nodes": ${nodesMatch[1]},
+                "edges": ${edgesMatch[1]}
+              }`;
+              
+              mindmapData = JSON.parse(manualJson);
+              console.log("Successfully parsed manually extracted JSON");
+            } else {
+              throw new Error("Could not extract nodes and edges arrays");
+            }
+          } catch (extractError) {
+            console.error("Last-resort extraction failed:", extractError);
+            throw parseError;
+          }
+        }
+      }
       
       // Validate that the response has the expected structure
       if (!mindmapData.nodes || !Array.isArray(mindmapData.nodes) || 
           !mindmapData.edges || !Array.isArray(mindmapData.edges)) {
-        console.error("Invalid mindmap data structure", mindmapData);
+        console.error("Invalid mindmap data structure", safeStringify(mindmapData));
         return NextResponse.json(
           { error: "AI response had invalid structure" },
           { status: 500 }
@@ -141,6 +397,7 @@ export async function POST(request: Request) {
       // If API didn't generate enough edges, create default connections from node 1 to all others
       if (mindmapData.edges.length < mindmapData.nodes.length - 1) {
         console.log("Not enough edges detected, adding default connections");
+        console.log("Original edges:", safeStringify(mindmapData.edges));
         
         // Clear existing edges
         mindmapData.edges = [];
@@ -167,13 +424,14 @@ export async function POST(request: Request) {
       });
       
       console.log(`Generated mindmap with ${mindmapData.nodes.length} nodes and ${mindmapData.edges.length} edges`);
-      console.log("Edges:", JSON.stringify(mindmapData.edges));
+      console.log("Final edges structure:", safeStringify(mindmapData.edges));
       
       return NextResponse.json({ result: mindmapData });
       
     } catch (e) {
-      console.error("Error parsing JSON from Gemini response:", e);
-      console.error("Problematic content:", jsonContent);
+      console.error("Error processing JSON from Gemini response:", e);
+      console.error("Problematic content first 500 chars:", jsonContent.substring(0, 500));
+      console.error("Problematic content last 500 chars:", jsonContent.substring(Math.max(0, jsonContent.length - 500)));
       
       // Return fallback data in case of parsing error
       const fallbackData = {
@@ -410,19 +668,13 @@ export async function POST(request: Request) {
           { id: 'e3', source: '1', target: '4', type: 'straight' },
           { id: 'e4', source: '1', target: '5', type: 'straight' },
           { id: 'e5', source: '1', target: '6', type: 'straight' },
-          { id: 'e6', source: '1', target: '7', type: 'straight' },
-          { id: 'e7', source: '1', target: '8', type: 'straight' },
-          { id: 'e8', source: '1', target: '9', type: 'straight' },
-          { id: 'e9', source: '2', target: '4', type: 'straight' },
-          { id: 'e10', source: '3', target: '4', type: 'straight' },
-          { id: 'e11', source: '4', target: '5', type: 'straight' },
-          { id: 'e12', source: '4', target: '6', type: 'straight' },
-          { id: 'e13', source: '4', target: '7', type: 'straight' },
-          { id: 'e14', source: '5', target: '8', type: 'straight' },
-          { id: 'e15', source: '6', target: '8', type: 'straight' },
-          { id: 'e16', source: '7', target: '9', type: 'straight' },
-          { id: 'e17', source: '8', target: '9', type: 'straight' }
-        ],
+          { id: 'e6', source: '2', target: '3', type: 'straight' },
+          { id: 'e7', source: '2', target: '4', type: 'straight' },
+          { id: 'e8', source: '3', target: '4', type: 'straight' },
+          { id: 'e9', source: '3', target: '6', type: 'straight' },
+          { id: 'e10', source: '4', target: '6', type: 'straight' },
+          { id: 'e11', source: '5', target: '6', type: 'straight' }
+        ]
       };
       
       return NextResponse.json({ 
