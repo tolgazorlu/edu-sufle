@@ -92,8 +92,8 @@ export async function POST(request: Request) {
       - ALL nodes must be connected to at least one other node
       - CRITICAL: The central topic (node 1) must connect to EVERY main subtopic
       - EVERY node (except node 1) must have at least one incoming connection
-      - Use "smoothstep" for edge type (not "smoothstep")
-      - Use "animated" for edge animation true
+      - Use "smoothstep" for edge type
+      - Use "animated": true for edge animation
       - Use sequential numbers for edge IDs (e1, e2, e3, etc.)
       - EACH node MUST have a detailed "description" field (3-5 sentences) that explains the concept thoroughly
       - For EACH node, provide 2-4 REAL, EXISTING resources with valid URLs
@@ -124,17 +124,22 @@ export async function POST(request: Request) {
 
     console.log("Sending request to Gemini API for topic:", topic);
     
-    const response = await ai.models.generateContent({
-      model: "gemini-2.0-flash",
-      contents: [{ role: "user", parts: [{ text: mindmapGeneratorPrompt }] }],
-      // config: {
-      //   temperature: 0.2,
-      //   topP: 0.8,
-      //   topK: 40,
-      //   maxOutputTokens: 2048,
-      // },
-    });
+    // Call Gemini API with error handling
+    let response;
+    try {
+      response = await ai.models.generateContent({
+        model: "gemini-2.0-flash",
+        contents: [{ role: "user", parts: [{ text: mindmapGeneratorPrompt }] }],
+      });
+    } catch (apiError) {
+      console.error("Error calling Gemini API:", apiError);
+      return NextResponse.json(
+        { error: "Failed to communicate with the AI model. Please try again later." },
+        { status: 500 }
+      );
+    }
 
+    // Validate response exists and has expected structure
     if (!response || !response.candidates || response.candidates.length === 0) {
       console.error("Empty response from Gemini API");
       return NextResponse.json(
@@ -143,13 +148,24 @@ export async function POST(request: Request) {
       );
     }
 
-    console.log("Received response from Gemini API");
-    
-    // Get text response and attempt to parse JSON
+    // Process the response text
     const responseText = response.text || "";
     console.log("Raw response:", responseText.substring(0, 200) + "...");
     
-    // Try to extract JSON object from the response, handling different formats
+    // Early rejection of obvious error messages or non-JSON responses
+    if (
+      responseText.trim().startsWith("An error") || 
+      responseText.trim().startsWith("I apologize") ||
+      !responseText.includes("{")
+    ) {
+      console.error("Response appears to be an error message instead of JSON:", responseText);
+      return NextResponse.json(
+        { error: "The AI model returned an error response" },
+        { status: 500 }
+      );
+    }
+    
+    // Extract JSON content from response
     let jsonContent = "";
     
     // Check if response contains a code block with JSON
@@ -164,247 +180,80 @@ export async function POST(request: Request) {
         console.log("Found JSON object in response");
         jsonContent = jsonMatch[1];
       } else {
-        console.log("No clear JSON object found, using full response");
-        jsonContent = responseText;
+        // No JSON object found, reject the response
+        console.error("No JSON object found in response");
+        return NextResponse.json(
+          { error: "The AI model did not return properly formatted data" },
+          { status: 500 }
+        );
       }
     }
     
-    // Log if the content might be truncated
-    if (jsonContent.trim().endsWith(",") || 
-        jsonContent.trim().endsWith("[") || 
-        jsonContent.trim().endsWith("{")) {
-      console.warn("Warning: JSON content may be truncated");
-    }
-    
+    // Try to parse and fix JSON
     let mindmapData;
     try {
-      // First attempt: try to parse the JSON as is
+      // First attempt: parse as-is
       try {
         mindmapData = JSON.parse(jsonContent);
         console.log("Successfully parsed JSON");
-      } catch (parseError: any) {
-        // If parsing fails, attempt to fix common JSON issues
-        console.warn("Initial JSON parsing failed:", parseError.message);
-        console.log("Attempting to fix malformed JSON...");
+      } catch (parseError) {
+        console.warn("Initial JSON parsing failed:", parseError);
         
-        // Fix 1: Try to complete truncated JSON by adding missing closing brackets
+        // Fix 1: Balance braces and brackets
         let fixedJson = jsonContent;
         
-        // Count opening and closing brackets
+        // Count and fix unbalanced brackets
         const openBraces = (jsonContent.match(/\{/g) || []).length;
         const closeBraces = (jsonContent.match(/\}/g) || []).length;
         const openBrackets = (jsonContent.match(/\[/g) || []).length;
         const closeBrackets = (jsonContent.match(/\]/g) || []).length;
         
-        console.log(`Bracket counts - { : ${openBraces}, } : ${closeBraces}, [ : ${openBrackets}, ] : ${closeBrackets}`);
-        
-        // Add missing closing brackets if needed
         if (openBraces > closeBraces) {
-          const missingBraces = openBraces - closeBraces;
-          console.log(`Adding ${missingBraces} missing closing braces }`);
-          fixedJson = fixedJson + "}".repeat(missingBraces);
+          fixedJson += "}".repeat(openBraces - closeBraces);
         }
         
         if (openBrackets > closeBrackets) {
-          const missingBrackets = openBrackets - closeBrackets;
-          console.log(`Adding ${missingBrackets} missing closing brackets ]`);
-          fixedJson = fixedJson + "]".repeat(missingBrackets);
+          fixedJson += "]".repeat(openBrackets - closeBrackets);
         }
         
-        // Fix 2: Fix trailing commas in arrays and objects
+        // Fix 2: Remove trailing commas
         fixedJson = fixedJson
-          .replace(/,\s*}/g, '}')  // Remove trailing commas in objects
-          .replace(/,\s*]/g, ']'); // Remove trailing commas in arrays
-          
-        // Fix 3: Try to identify and fix malformed array elements
-        // This is a more aggressive fix attempt for position-specific errors
-        try {
-          JSON.parse(fixedJson);
-        } catch (positionError: any) {
-          // Extract position from error message if available
-          const posMatch = positionError.message.match(/position (\d+)/);
-          const lineMatch = positionError.message.match(/line (\d+) column (\d+)/);
-          
-          // Special handling for the common error at line 178 near position 9004
-          if (lineMatch && parseInt(lineMatch[1]) === 178) {
-            console.log("Detected specific error pattern at line 178 (common error location)");
-            
-            // Log error position details if available from the position match
-            if (posMatch && posMatch[1]) {
-              const errorPos = parseInt(posMatch[1]);
-              console.log(`JSON error at position ${errorPos}, attempting targeted fix`);
-              console.log(`Character at error position: "${fixedJson.charAt(errorPos)}", char code: ${fixedJson.charCodeAt(errorPos)}`);
-              console.log(`Characters before: "${fixedJson.substring(errorPos-10, errorPos)}"`);
-              console.log(`Characters after: "${fixedJson.substring(errorPos, errorPos+10)}"`);
-            }
-            
-            // Let's try to find the resources array that's likely causing the issue
-            const resourcesRegex = /"resources"\s*:\s*\[([\s\S]*?)\]/g;
-            let resourceMatches;
-            let lastResourceMatch = null;
-            
-            // Find the last resources array before the error position
-            while ((resourceMatches = resourcesRegex.exec(fixedJson)) !== null) {
-              if (resourcesRegex.lastIndex < 9004) {
-                lastResourceMatch = resourceMatches;
-              } else {
-                break;
-              }
-            }
-            
-            if (lastResourceMatch) {
-              console.log("Found resources array near error position");
-              const resourcesContent = lastResourceMatch[1];
-              
-              // Check if there's a missing comma or other issue in the array
-              if (resourcesContent.includes('}{') || resourcesContent.includes('""')) {
-                console.log("Found missing comma in resources array");
-                const fixedResources = resourcesContent.replace(/}(\s*){/g, '},\n$1{').replace(/"(\s*)"/g, '",\n$1"');
-                
-                // Replace the problematic resources array with the fixed one
-                const startIdx = lastResourceMatch.index + lastResourceMatch[0].indexOf('[') + 1;
-                const endIdx = lastResourceMatch.index + lastResourceMatch[0].length - 1;
-                
-                fixedJson = 
-                  fixedJson.substring(0, startIdx) + 
-                  fixedResources + 
-                  fixedJson.substring(endIdx);
-                  
-                console.log("Fixed resources array");
-              }
-            }
-          } else if (posMatch && posMatch[1]) {
-            const errorPos = parseInt(posMatch[1]);
-            console.log(`JSON error at position ${errorPos}, attempting targeted fix`);
-            console.log(`Character at error position: "${fixedJson.charAt(errorPos)}", char code: ${fixedJson.charCodeAt(errorPos)}`);
-            console.log(`Characters before: "${fixedJson.substring(errorPos-10, errorPos)}"`);
-            console.log(`Characters after: "${fixedJson.substring(errorPos, errorPos+10)}"`);
-            
-            // Look at the content around the error position
-            const contextStart = Math.max(0, errorPos - 50);
-            const contextEnd = Math.min(fixedJson.length, errorPos + 50);
-            const errorContext = fixedJson.substring(contextStart, contextEnd);
-            console.log(`Context around error: "${errorContext}"`);
-            
-            // Common error patterns and fixes
-            // 1. Missing commas between array elements or object properties
-            if (errorContext.includes('""') || 
-                errorContext.match(/\}\s*\{/) || 
-                errorContext.match(/"\s*"/)) {
-              console.log("Possible missing comma detected");
-              const before = fixedJson.substring(0, errorPos);
-              const after = fixedJson.substring(errorPos);
-              fixedJson = before + "," + after;
-            }
-            
-            // 2. Unescaped quotes in strings
-            else if (errorContext.match(/([^\\]")([^,\}])/)) {
-              console.log("Possible unescaped quote detected");
-              fixedJson = fixedJson.replace(/([^\\]")([^,\}])/, '$1,$2');
-            }
-            
-            // 3. Extra/stray commas before closing brackets/braces
-            else if (errorContext.match(/,\s*[\]\}]/)) {
-              console.log("Extra comma before closing bracket/brace");
-              fixedJson = fixedJson.replace(/,(\s*[\]\}])/g, '$1');
-            }
-            
-            // 4. Missing quotes around property names
-            else if (errorContext.match(/\{[^"']*?([a-zA-Z0-9_]+):/)) {
-              console.log("Missing quotes around property name");
-              fixedJson = fixedJson.replace(/\{([^"']*?)([a-zA-Z0-9_]+):/g, '{$1"$2":');
-            }
-            
-            // 5. General approach: try removing characters at error position
-            else {
-              console.log("Attempting to fix by removing problematic character");
-              fixedJson = fixedJson.substring(0, errorPos) + fixedJson.substring(errorPos + 1);
-            }
-          }
-        }
+          .replace(/,\s*}/g, '}')
+          .replace(/,\s*]/g, ']');
         
-        // Fix 4: Convert JavaScript syntax to JSON syntax if needed
-        // Fix undefined values (not valid in JSON)
-        fixedJson = fixedJson.replace(/:\s*undefined\s*([,\}])/g, ':null$1');
+        // Fix 3: Fix common JSON syntax issues
+        fixedJson = fixedJson
+          .replace(/([^\\])"([^"]*)"/g, '$1\\"$2\\"') // Escape unescaped quotes in strings
+          .replace(/([^\\])'([^']*)'/g, '$1"$2"') // Convert single quotes to double quotes
+          .replace(/:\s*undefined\s*([,\}])/g, ':null$1'); // Replace undefined with null
         
-        // Fix single quotes to double quotes for properties and string values
-        let inString = false;
-        let fixedChars = fixedJson.split('');
-        for (let i = 0; i < fixedChars.length; i++) {
-          if (fixedChars[i] === '"') {
-            // Check if this quote is escaped
-            if (i > 0 && fixedChars[i-1] === '\\') {
-              // This is an escaped quote, don't toggle inString
-              continue;
-            }
-            inString = !inString;
-          } else if (fixedChars[i] === "'" && !inString) {
-            // Convert single quotes to double quotes, but only outside of string literals
-            fixedChars[i] = '"';
-          }
-        }
-        fixedJson = fixedChars.join('');
-        
-        // Log the changes made
-        if (fixedJson !== jsonContent) {
-          console.log("JSON was modified during repair");
-        }
-        
-        // Try parsing the fixed JSON
+        // Try to parse the fixed JSON
         try {
           mindmapData = JSON.parse(fixedJson);
           console.log("Successfully parsed fixed JSON");
-        } catch (fixError: any) {
-          // If still fails, try one last desperate measure - manual extraction
-          console.error("Failed to fix JSON:", fixError.message);
-          
-          try {
-            console.log("Attempting last-resort extraction of nodes and edges");
-            
-            // Try to extract nodes array
-            const nodesMatch = fixedJson.match(/"nodes"\s*:\s*(\[[\s\S]*?\])(?=\s*,\s*"edges"|\s*\})/);
-            const edgesMatch = fixedJson.match(/"edges"\s*:\s*(\[[\s\S]*?\])(?=\s*\})/);
-            
-            if (nodesMatch && edgesMatch) {
-              console.log("Extracted nodes and edges arrays directly");
-              
-              // Construct a new JSON object with extracted arrays
-              const manualJson = `{
-                "nodes": ${nodesMatch[1]},
-                "edges": ${edgesMatch[1]}
-              }`;
-              
-              mindmapData = JSON.parse(manualJson);
-              console.log("Successfully parsed manually extracted JSON");
-            } else {
-              throw new Error("Could not extract nodes and edges arrays");
-            }
-          } catch (extractError) {
-            console.error("Last-resort extraction failed:", extractError);
-            throw parseError;
-          }
+        } catch (fixError) {
+          // If still can't parse, throw to fallback handler
+          throw new Error("Could not parse JSON after fixes");
         }
       }
       
-      // Validate that the response has the expected structure
-      if (!mindmapData.nodes || !Array.isArray(mindmapData.nodes) || 
-          !mindmapData.edges || !Array.isArray(mindmapData.edges)) {
-        console.error("Invalid mindmap data structure", safeStringify(mindmapData));
-        return NextResponse.json(
-          { error: "AI response had invalid structure" },
-          { status: 500 }
-        );
+      // Validate the parsed data has expected structure
+      if (
+        !mindmapData || 
+        !mindmapData.nodes || 
+        !Array.isArray(mindmapData.nodes) || 
+        !mindmapData.edges || 
+        !Array.isArray(mindmapData.edges)
+      ) {
+        throw new Error("Invalid mindmap data structure");
       }
       
-      // If API didn't generate enough edges, create default connections from node 1 to all others
+      // Ensure we have enough edges by creating default connections
       if (mindmapData.edges.length < mindmapData.nodes.length - 1) {
         console.log("Not enough edges detected, adding default connections");
-        console.log("Original edges:", safeStringify(mindmapData.edges));
         
-        // Clear existing edges
+        // Reset edges array and create connections from node 1 to all others
         mindmapData.edges = [];
-        
-        // Connect node 1 to all other nodes
         for (let i = 2; i <= mindmapData.nodes.length; i++) {
           mindmapData.edges.push({
             id: `e${i-1}`,
@@ -416,7 +265,7 @@ export async function POST(request: Request) {
         }
       }
       
-      // Ensure all edges have proper structure and type
+      // Standardize edge format
       mindmapData.edges = mindmapData.edges.map((edge: any, index: number) => {
         return {
           id: `e${index + 1}`,
@@ -428,268 +277,53 @@ export async function POST(request: Request) {
       });
       
       console.log(`Generated mindmap with ${mindmapData.nodes.length} nodes and ${mindmapData.edges.length} edges`);
-      console.log("Final edges structure:", safeStringify(mindmapData.edges));
-      
       return NextResponse.json({ result: mindmapData });
       
     } catch (e) {
-      console.error("Error processing JSON from Gemini response:", e);
-      console.error("Problematic content first 500 chars:", jsonContent.substring(0, 500));
-      console.error("Problematic content last 500 chars:", jsonContent.substring(Math.max(0, jsonContent.length - 500)));
+      console.error("Failed to process mindmap data:", e);
       
-      // Return fallback data in case of parsing error
+      // Provide fallback data for a better user experience
       const fallbackData = {
         nodes: [
           {
             id: '1',
             data: { 
-              label: 'React Native',
-              description: 'React Native is a popular JavaScript framework that allows you to build native mobile applications for iOS and Android using a single codebase. It was developed by Facebook and uses React architecture, allowing developers to use their web development skills to create truly native mobile apps. React Native combines the best parts of native development with React, employing a vast ecosystem of libraries and tools.',
+              label: topic || 'Main Topic',
+              description: 'This is a fallback mindmap. The AI was unable to generate a proper response for your topic. Try a different topic or try again later.',
               resources: [
                 {
-                  title: 'React Native Official Documentation',
-                  description: 'The official React Native documentation providing comprehensive guides, API references, and tutorials.',
-                  url: 'https://reactnative.dev/docs/getting-started'
-                },
-                {
-                  title: 'React Native GitHub Repository',
-                  description: 'The official GitHub repository for React Native, containing source code and development resources.',
-                  url: 'https://github.com/facebook/react-native'
-                },
-                {
-                  title: 'React Native Course by The Net Ninja',
-                  description: 'A comprehensive YouTube course covering React Native fundamentals and project building.',
-                  url: 'https://www.youtube.com/playlist?list=PL4cUxeGkcC9ixPU-QkScoRBVxtPPzVjrQ'
-                }
-              ]
-            },
-            position: { x: 400, y: 100 }
-          },
-          {
-            id: '2',
-            data: { 
-              label: 'JavaScript & React Fundamentals',
-              description: 'Before diving into React Native, you need a solid understanding of JavaScript and React. This includes modern ES6+ syntax, functional programming concepts, and React core principles like components, props, state, and hooks. Having these fundamentals will make your React Native journey much smoother as the framework is built on these technologies.',
-              resources: [
-                {
-                  title: 'Modern JavaScript for React Native',
-                  description: 'A guide focusing on JavaScript concepts essential for React and React Native development.',
-                  url: 'https://www.robinwieruch.de/javascript-fundamentals-react-requirements/'
-                },
-                {
-                  title: 'React Documentation',
-                  description: 'The official React documentation covering core concepts that transfer to React Native.',
-                  url: 'https://react.dev/learn'
-                },
-                {
-                  title: 'React Hooks Explained',
-                  description: 'Comprehensive tutorial on React Hooks which are essential for modern React Native development.',
-                  url: 'https://dmitripavlutin.com/react-hooks-tutorial/'
-                }
-              ]
-            },
-            position: { x: 200, y: 200 }
-          },
-          {
-            id: '3',
-            data: { 
-              label: 'Setting Up Development Environment',
-              description: 'Setting up the React Native development environment involves installing Node.js, a package manager (npm/yarn), React Native CLI or Expo CLI, and platform-specific tools like Android Studio or Xcode. Expo provides a faster setup with managed workflow, while React Native CLI offers more control and native module integration. Choosing the right setup is crucial for your development experience.',
-              resources: [
-                {
-                  title: 'React Native Environment Setup Guide',
-                  description: 'Official guide for setting up your development environment for React Native.',
-                  url: 'https://reactnative.dev/docs/environment-setup'
-                },
-                {
-                  title: 'Expo vs React Native CLI',
-                  description: 'A comparison between Expo and React Native CLI to help you choose the right approach.',
-                  url: 'https://docs.expo.dev/introduction/expo-or-react-native/'
-                },
-                {
-                  title: 'Setting Up React Native with TypeScript',
-                  description: 'Guide for setting up a React Native project with TypeScript for type safety.',
-                  url: 'https://reactnative.dev/docs/typescript'
-                }
-              ]
-            },
-            position: { x: 600, y: 200 }
-          },
-          {
-            id: '4',
-            data: { 
-              label: 'Core Components & APIs',
-              description: 'React Native provides a set of essential built-in components that map to native UI elements like View, Text, Image, ScrollView, and TextInput. Additionally, it offers APIs for accessing device functionalities such as camera, geolocation, and storage. Understanding these core components and APIs is fundamental to building mobile apps with React Native.',
-              resources: [
-                {
-                  title: 'React Native Core Components and APIs',
-                  description: 'Official documentation on the essential building blocks of React Native apps.',
-                  url: 'https://reactnative.dev/docs/components-and-apis'
-                },
-                {
-                  title: 'React Native Elements',
-                  description: 'A cross-platform UI toolkit that provides reusable components for React Native.',
-                  url: 'https://reactnativeelements.com/docs'
-                },
-                {
-                  title: 'React Native Practical Guide',
-                  description: 'A hands-on course teaching how to use React Native components effectively.',
-                  url: 'https://www.udemy.com/course/react-native-the-practical-guide/'
+                  title: 'Wikipedia',
+                  description: 'Wikipedia may have information about this topic.',
+                  url: `https://en.wikipedia.org/wiki/${encodeURIComponent(topic || 'Main_Topic')}`
                 }
               ]
             },
             position: { x: 400, y: 300 }
           },
           {
-            id: '5',
+            id: '2',
             data: { 
-              label: 'Navigation',
-              description: 'Navigation is essential in mobile apps, allowing users to move between different screens. React Navigation is the most popular library for handling navigation in React Native apps, offering stack, tab, drawer, and nested navigators. Understanding how to structure your app\'s navigation flow is crucial for creating intuitive user experiences.',
-              resources: [
-                {
-                  title: 'React Navigation Documentation',
-                  description: 'The official documentation for React Navigation, the standard navigation library for React Native.',
-                  url: 'https://reactnavigation.org/docs/getting-started'
-                },
-                {
-                  title: 'Navigation Patterns in React Native',
-                  description: 'A guide to implementing different navigation patterns in React Native apps.',
-                  url: 'https://blog.logrocket.com/react-native-navigation-tutorial/'
-                },
-                {
-                  title: 'Deep Linking in React Navigation',
-                  description: 'How to implement deep linking to allow users to navigate directly to specific parts of your app.',
-                  url: 'https://reactnavigation.org/docs/deep-linking'
-                }
-              ]
-            },
-            position: { x: 200, y: 400 }
-          },
-          {
-            id: '6',
-            data: { 
-              label: 'State Management',
-              description: 'Managing state in React Native applications is crucial for handling data flow. While React\'s built-in state and Context API can handle simple cases, larger apps often use libraries like Redux, MobX, or Recoil. Choosing the right state management approach depends on your app\'s complexity, team preferences, and performance requirements.',
-              resources: [
-                {
-                  title: 'Redux Toolkit with React Native',
-                  description: 'Official guide on using Redux Toolkit for state management in React Native apps.',
-                  url: 'https://redux-toolkit.js.org/tutorials/quick-start'
-                },
-                {
-                  title: 'React Query for Data Fetching',
-                  description: 'Documentation for TanStack Query (React Query), a powerful data fetching library.',
-                  url: 'https://tanstack.com/query/latest/docs/react/overview'
-                },
-                {
-                  title: 'Zustand - Simple State Management',
-                  description: 'A lightweight state management solution for React and React Native.',
-                  url: 'https://github.com/pmndrs/zustand'
-                }
-              ]
+              label: 'Try another topic',
+              description: 'If this topic is not working, try a more specific or common topic like "JavaScript", "Machine Learning", or "Digital Marketing".',
+              resources: []
             },
             position: { x: 600, y: 400 }
-          },
-          {
-            id: '7',
-            data: { 
-              label: 'Styling & UI Libraries',
-              description: 'Styling in React Native uses a subset of CSS with a JavaScript object-based syntax. You can create styles using StyleSheet.create() or use styled-components/emotion for a CSS-like experience. For consistent UI design, libraries like React Native Paper, Native Base, or UI Kitten provide pre-built components following design systems. These tools help create polished interfaces faster.',
-              resources: [
-                {
-                  title: 'Styling in React Native',
-                  description: 'Official guide on styling approaches in React Native applications.',
-                  url: 'https://reactnative.dev/docs/style'
-                },
-                {
-                  title: 'React Native Paper',
-                  description: 'A Material Design implementation for React Native with ready-to-use components.',
-                  url: 'https://callstack.github.io/react-native-paper/'
-                },
-                {
-                  title: 'Styled Components for React Native',
-                  description: 'Documentation on using styled-components to create component-scoped styles in React Native.',
-                  url: 'https://styled-components.com/docs/basics#react-native'
-                }
-              ]
-            },
-            position: { x: 400, y: 500 }
-          },
-          {
-            id: '8',
-            data: { 
-              label: 'Networking & API Integration',
-              description: 'Most React Native apps need to communicate with external APIs to fetch or send data. You can use the built-in fetch API or libraries like Axios for HTTP requests. Understanding how to handle API responses, error management, and implementing features like caching, offline support, and real-time updates is essential for creating robust mobile applications.',
-              resources: [
-                {
-                  title: 'Networking in React Native',
-                  description: 'Official guide on making network requests in React Native applications.',
-                  url: 'https://reactnative.dev/docs/network'
-                },
-                {
-                  title: 'Axios Documentation',
-                  description: 'Documentation for Axios, a popular HTTP client for making API requests.',
-                  url: 'https://axios-http.com/docs/intro'
-                },
-                {
-                  title: 'GraphQL with Apollo Client',
-                  description: 'Guide on integrating GraphQL APIs in React Native using Apollo Client.',
-                  url: 'https://www.apollographql.com/docs/react/'
-                }
-              ]
-            },
-            position: { x: 200, y: 600 }
-          },
-          {
-            id: '9',
-            data: { 
-              label: 'Testing & Debugging',
-              description: 'Testing and debugging are critical for building reliable React Native applications. Jest is commonly used for unit and integration testing, while Detox or Appium handle end-to-end testing. For debugging, React Native offers developer tools like Flipper, React DevTools, and debugging within Chrome. Implementing proper testing strategies improves code quality and reduces bugs.',
-              resources: [
-                {
-                  title: 'Testing React Native Apps',
-                  description: 'Official guide on testing strategies for React Native applications.',
-                  url: 'https://reactnative.dev/docs/testing-overview'
-                },
-                {
-                  title: 'Debugging React Native',
-                  description: 'Comprehensive guide on debugging techniques for React Native.',
-                  url: 'https://reactnative.dev/docs/debugging'
-                },
-                {
-                  title: 'Detox for E2E Testing',
-                  description: 'Documentation for Detox, a gray box end-to-end testing framework for mobile apps.',
-                  url: 'https://wix.github.io/Detox/'
-                }
-              ]
-            },
-            position: { x: 600, y: 600 }
           }
         ],
         edges: [
-          { id: 'e1', source: '1', target: '2', type: 'smoothstep', animated: true },
-          { id: 'e2', source: '1', target: '3', type: 'smoothstep', animated: true },
-          { id: 'e3', source: '1', target: '4', type: 'smoothstep', animated: true },
-          { id: 'e4', source: '1', target: '5', type: 'smoothstep', animated: true },
-          { id: 'e5', source: '1', target: '6', type: 'smoothstep', animated: true },
-          { id: 'e6', source: '2', target: '3', type: 'smoothstep', animated: true },
-          { id: 'e7', source: '2', target: '4', type: 'smoothstep', animated: true },
-          { id: 'e8', source: '3', target: '4', type: 'smoothstep', animated: true },
-          { id: 'e9', source: '3', target: '6', type: 'smoothstep', animated: true },
-          { id: 'e10', source: '4', target: '6', type: 'smoothstep', animated: true },
-          { id: 'e11', source: '5', target: '6', type: 'smoothstep', animated: true }
+          { id: 'e1', source: '1', target: '2', type: 'smoothstep', animated: true }
         ]
       };
       
-      return NextResponse.json({ 
+      return NextResponse.json({
         result: fallbackData,
-        error: "Could not parse AI response, showing fallback data"
+        error: "Could not create mindmap for this topic. Try another topic."
       });
     }
   } catch (error) {
-    console.error("Error generating mindmap:", error);
+    console.error("General error in mindmap generation:", error);
     return NextResponse.json(
-      { error: "Failed to generate mindmap" },
+      { error: "Failed to process your request. Please try again later." },
       { status: 500 }
     );
   }

@@ -235,7 +235,14 @@ export default function Mindmap() {
                 body: JSON.stringify({topic}),
             });
 
-            const data = await response.json();
+            // Handle non-JSON responses (like network errors)
+            let data;
+            try {
+                data = await response.json();
+            } catch (parseError) {
+                console.error('Failed to parse API response:', parseError);
+                throw new Error('The server responded with invalid data. Please try again later.');
+            }
 
             if (!response.ok) {
                 throw new Error(data.error || 'Failed to generate mindmap');
@@ -266,12 +273,20 @@ export default function Mindmap() {
 
                 // Save to localStorage for later use
                 localStorage.setItem('mindmapData', JSON.stringify(data.result));
+                
+                // Display success message
+                toast.success('Mindmap generated successfully!');
+            } else if (data.error) {
+                // Handle specific error from API
+                throw new Error(data.error);
             } else {
                 throw new Error('Invalid response format');
             }
         } catch (err: unknown) {
-            console.error('Error:', err);
-            setError(err instanceof Error ? err.message : 'Something went wrong');
+            console.error('Error generating mindmap:', err);
+            const errorMessage = err instanceof Error ? err.message : 'Something went wrong';
+            setError(errorMessage);
+            toast.error(`Failed to generate mindmap: ${errorMessage}`);
         } finally {
             setIsLoading(false);
         }
