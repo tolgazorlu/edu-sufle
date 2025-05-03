@@ -23,12 +23,35 @@ export async function POST(request: Request) {
         "nodes": [
           {
             "id": "1",
-            "data": { "label": "Main Topic" },
+            "data": { 
+              "label": "Main Topic",
+              "resources": [
+                {
+                  "title": "Resource Title 1",
+                  "description": "Short description of the resource (1-2 sentences)",
+                  "url": "https://example.com/resource1"
+                },
+                {
+                  "title": "Resource Title 2",
+                  "description": "Short description of the resource (1-2 sentences)",
+                  "url": "https://example.com/resource2"
+                }
+              ]
+            },
             "position": { "x": 250, "y": 25 }
           },
           {
             "id": "2",
-            "data": { "label": "Subtopic 1" },
+            "data": { 
+              "label": "Subtopic 1",
+              "resources": [
+                {
+                  "title": "Resource Title 3",
+                  "description": "Short description of the resource (1-2 sentences)",
+                  "url": "https://example.com/resource3"
+                }
+              ]
+            },
             "position": { "x": 100, "y": 125 }
           }
         ],
@@ -53,6 +76,10 @@ export async function POST(request: Request) {
       - EVERY node (except node 1) must have at least one incoming connection
       - Use "straight" for edge type (not "smoothstep")
       - Use sequential numbers for edge IDs (e1, e2, e3, etc.)
+      - For EACH node, provide 2-4 REAL, EXISTING resources with valid URLs
+      - Resources should be educational materials like articles, videos, tutorials, or documentation
+      - URLs must be real and relevant to the node's topic
+      - Each resource should have a descriptive title and a brief informative description
     `;
 
     const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
@@ -143,17 +170,49 @@ export async function POST(request: Request) {
         nodes: [
           {
             id: '1',
-            data: { label: topic },
+            data: { 
+              label: topic,
+              resources: [
+                {
+                  title: "Introduction to " + topic,
+                  description: "A comprehensive guide to understanding " + topic + " basics.",
+                  url: "https://en.wikipedia.org/wiki/" + topic.replace(/\s+/g, '_')
+                },
+                {
+                  title: topic + " Tutorial",
+                  description: "Step-by-step tutorial for beginners to learn " + topic,
+                  url: "https://www.youtube.com/results?search_query=" + topic.replace(/\s+/g, '+') + "+tutorial"
+                }
+              ]
+            },
             position: { x: 250, y: 25 }
           },
           {
             id: '2',
-            data: { label: 'Concept 1' },
+            data: { 
+              label: 'Concept 1',
+              resources: [
+                {
+                  title: "Understanding Concept 1",
+                  description: "Detailed explanation of this concept and its importance.",
+                  url: "https://www.google.com/search?q=" + topic.replace(/\s+/g, '+') + "+concept+1"
+                }
+              ]
+            },
             position: { x: 100, y: 125 }
           },
           {
             id: '3',
-            data: { label: 'Concept 2' },
+            data: { 
+              label: 'Concept 2',
+              resources: [
+                {
+                  title: "Mastering Concept 2",
+                  description: "Advanced techniques and practices related to this concept.",
+                  url: "https://www.google.com/search?q=" + topic.replace(/\s+/g, '+') + "+concept+2"
+                }
+              ]
+            },
             position: { x: 400, y: 125 }
           }
         ],

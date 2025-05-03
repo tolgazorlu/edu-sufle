@@ -18,17 +18,34 @@ import {
   Panel,
   Connection,
   addEdge,
-  EdgeProps
+  EdgeProps,
+  useReactFlow,
+  NodeMouseHandler
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Loader2 } from 'lucide-react';
+import { Loader2, ExternalLink, X } from 'lucide-react';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
+
+// Resource type definition
+interface Resource {
+  title: string;
+  description: string;
+  url: string;
+}
+
+// Node data type with resources
+interface NodeData {
+  label: string;
+  resources?: Resource[];
+  [key: string]: unknown; // Add index signature to satisfy Record<string, unknown> constraint
+}
 
 // Custom node component with better styling
-const CustomNode = ({ data }: { data: any }) => {
+const CustomNode = ({ data, id }: { data: NodeData; id: string }) => {
   return (
     <div className="px-4 py-2 shadow-md rounded-md border-2 text-center min-w-[180px] max-w-[250px] bg-white border-blue-200 hover:border-blue-400 transition-colors">
       <div className="truncate text-sm font-medium">{data.label}</div>
@@ -63,6 +80,65 @@ const StraightEdge = ({
   );
 };
 
+// Custom Right Drawer Component
+interface RightDrawerProps {
+  open: boolean;
+  onClose: () => void;
+  title: string;
+  description?: string;
+  children: React.ReactNode;
+}
+
+const RightDrawer: React.FC<RightDrawerProps> = ({
+  open,
+  onClose,
+  title,
+  description,
+  children
+}) => {
+  return (
+    <>
+      {/* Overlay */}
+      <div 
+        className={cn(
+          "fixed inset-0 bg-black/40 z-50 transition-opacity",
+          open ? "opacity-100" : "opacity-0 pointer-events-none"
+        )}
+        onClick={onClose}
+      />
+      
+      {/* Drawer panel */}
+      <div 
+        className={cn(
+          "fixed top-0 right-0 h-full w-[400px] max-w-[90vw] bg-white z-50 shadow-xl transform transition-transform duration-300 ease-in-out border-l border-gray-200",
+          open ? "translate-x-0" : "translate-x-full"
+        )}
+      >
+        {/* Header */}
+        <div className="px-6 py-4 border-b border-gray-200">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold text-indigo-700">{title}</h2>
+            <button 
+              onClick={onClose} 
+              className="rounded-full p-1 hover:bg-gray-100 transition-colors"
+            >
+              <X size={18} className="text-gray-500" />
+            </button>
+          </div>
+          {description && (
+            <p className="mt-1 text-sm text-gray-500">{description}</p>
+          )}
+        </div>
+        
+        {/* Content */}
+        <div className="p-6 overflow-y-auto" style={{ height: "calc(100% - 70px)" }}>
+          {children}
+        </div>
+      </div>
+    </>
+  );
+};
+
 export default function Mindmap() {
   const [nodes, setNodes] = useState<Node[]>([]);
   const [edges, setEdges] = useState<Edge[]>([]);
@@ -72,6 +148,8 @@ export default function Mindmap() {
   const [dataSource, setDataSource] = useState<'localStorage' | 'api' | 'default'>('default');
   const [connectedAddress, setConnectedAddress] = useState("");
   const [accountBalance, setAccountBalance] = useState("0");
+  const [selectedNode, setSelectedNode] = useState<Node<NodeData> | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   
   // Define custom node and edge types
   const nodeTypes = useMemo(() => ({ 
@@ -96,6 +174,12 @@ export default function Mindmap() {
     (params: Connection) => setEdges((eds) => addEdge(params, eds)),
     [],
   );
+
+  // Handle node click to show resources
+  const onNodeClick: NodeMouseHandler = useCallback((event, node) => {
+    setSelectedNode(node as Node<NodeData>);
+    setDrawerOpen(true);
+  }, []);
 
   // Apply styling to nodes and edges
   const processNodesAndEdges = useCallback((rawNodes: Node[], rawEdges: Edge[]) => {
@@ -296,6 +380,7 @@ export default function Mindmap() {
                 onNodesChange={onNodesChange}
                 onEdgesChange={onEdgesChange}
                 onConnect={onConnect}
+                onNodeClick={onNodeClick}
                 nodeTypes={nodeTypes}
                 edgeTypes={edgeTypes}
                 fitView
@@ -335,6 +420,39 @@ export default function Mindmap() {
               </div>
             )}
           </div>
+          
+          {/* Resource Right Drawer */}
+          {selectedNode && (
+            <RightDrawer
+              open={drawerOpen}
+              onClose={() => setDrawerOpen(false)}
+              title={`Resources for: ${selectedNode.data.label}`}
+              description="Click on any resource to open it in a new tab"
+            >
+              {selectedNode.data.resources && selectedNode.data.resources.length > 0 ? (
+                <div className="space-y-4">
+                  {selectedNode.data.resources.map((resource: Resource, index: number) => (
+                    <div 
+                      key={index} 
+                      className="p-4 rounded-lg border border-gray-200 hover:border-indigo-300 hover:shadow-md transition-all cursor-pointer"
+                      onClick={() => window.open(resource.url, '_blank')}
+                    >
+                      <div className="flex justify-between items-start">
+                        <h3 className="font-medium text-indigo-600 mb-1">{resource.title}</h3>
+                        <ExternalLink className="h-4 w-4 text-gray-400" />
+                      </div>
+                      <p className="text-sm text-gray-600">{resource.description}</p>
+                      <div className="mt-2 text-xs text-gray-400 truncate">{resource.url}</div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="py-8 text-center text-gray-500">
+                  <p>No resources available for this topic.</p>
+                </div>
+              )}
+            </RightDrawer>
+          )}
         </div>
       </SidebarInset>
     </SidebarProvider>
