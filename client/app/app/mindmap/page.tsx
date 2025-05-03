@@ -235,6 +235,8 @@ export default function Mindmap() {
                 body: JSON.stringify({topic}),
             });
 
+            console.log('Response:', response);
+
             // Handle non-JSON responses (like network errors)
             let data;
             try {
