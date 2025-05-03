@@ -24,23 +24,20 @@ export async function POST(request: Request) {
           {
             "id": "1",
             "data": { "label": "Main Topic" },
-            "position": { "x": 250, "y": 25 },
-            "type": "input"
+            "position": { "x": 250, "y": 25 }
           },
           {
             "id": "2",
             "data": { "label": "Subtopic 1" },
-            "position": { "x": 100, "y": 125 },
-            "type": "default"
+            "position": { "x": 100, "y": 125 }
           }
         ],
         "edges": [
           {
-            "id": "e1-2",
+            "id": "e1",
             "source": "1",
             "target": "2",
-            "label": "relates to",
-            "type": "step"
+            "type": "straight"
           }
         ]
       }
@@ -48,12 +45,14 @@ export async function POST(request: Request) {
       Guidelines:
       - Create 5-10 nodes with meaningful connections
       - Use sequential numbers for node IDs (1, 2, 3, etc.)
-      - Use e{source}-{target} format for edge IDs (e1-2, e1-3, etc.)
-      - Position nodes in a visually appealing layout (x range: 0-500, y range: 0-400)
-      - First node (id: "1") should be the main topic with type "input"
-      - All other nodes should have type "default"
-      - Keep labels concise and descriptive
-      - Edges should describe the relationship between connected nodes
+      - Create ONE edge connecting EACH node pair that has a relationship
+      - First node should be centered with other nodes positioned around it
+      - Position nodes in a visually appealing layout (x range: 0-800, y range: 0-600)
+      - ALL nodes must be connected to at least one other node
+      - CRITICAL: The central topic (node 1) must connect to EVERY main subtopic
+      - EVERY node (except node 1) must have at least one incoming connection
+      - Use "straight" for edge type (not "smoothstep")
+      - Use sequential numbers for edge IDs (e1, e2, e3, etc.)
     `;
 
     const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
@@ -102,7 +101,37 @@ export async function POST(request: Request) {
         );
       }
       
+      // If API didn't generate enough edges, create default connections from node 1 to all others
+      if (mindmapData.edges.length < mindmapData.nodes.length - 1) {
+        console.log("Not enough edges detected, adding default connections");
+        
+        // Clear existing edges
+        mindmapData.edges = [];
+        
+        // Connect node 1 to all other nodes
+        for (let i = 2; i <= mindmapData.nodes.length; i++) {
+          mindmapData.edges.push({
+            id: `e${i-1}`,
+            source: "1",
+            target: i.toString(),
+            type: "straight"
+          });
+        }
+      }
+      
+      // Ensure all edges have proper structure and type
+      mindmapData.edges = mindmapData.edges.map((edge: any, index: number) => {
+        return {
+          id: `e${index + 1}`,
+          source: edge.source,
+          target: edge.target,
+          type: "straight"  // Use straight type instead of smoothstep
+        };
+      });
+      
       console.log(`Generated mindmap with ${mindmapData.nodes.length} nodes and ${mindmapData.edges.length} edges`);
+      console.log("Edges:", JSON.stringify(mindmapData.edges));
+      
       return NextResponse.json({ result: mindmapData });
       
     } catch (e) {
@@ -115,18 +144,22 @@ export async function POST(request: Request) {
           {
             id: '1',
             data: { label: topic },
-            position: { x: 250, y: 25 },
-            type: 'input',
+            position: { x: 250, y: 25 }
           },
           {
             id: '2',
-            data: { label: 'AI could not generate a complete mindmap' },
-            position: { x: 250, y: 125 },
-            type: 'default',
+            data: { label: 'Concept 1' },
+            position: { x: 100, y: 125 }
           },
+          {
+            id: '3',
+            data: { label: 'Concept 2' },
+            position: { x: 400, y: 125 }
+          }
         ],
         edges: [
-          { id: 'e1-2', source: '1', target: '2', label: 'error', type: 'step' },
+          { id: 'e1', source: '1', target: '2', type: 'straight' },
+          { id: 'e2', source: '1', target: '3', type: 'straight' }
         ],
       };
       
