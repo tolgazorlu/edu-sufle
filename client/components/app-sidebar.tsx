@@ -61,6 +61,11 @@ const defaultData = {
     //   icon: MapIcon,
     // },
     {
+      title: "Todo",
+      url: "/app/todo",
+      icon: FileTextIcon,
+    },
+    {
       title: "Mindmap",
       url: "/app/mindmap",
       icon: BrainCircuit,

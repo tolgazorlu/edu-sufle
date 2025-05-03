@@ -40,6 +40,7 @@ interface Resource {
 // Node data type with resources
 interface NodeData {
   label: string;
+  description?: string;
   resources?: Resource[];
   [key: string]: unknown; // Add index signature to satisfy Record<string, unknown> constraint
 }
@@ -321,21 +322,27 @@ export default function Mindmap() {
 
   // Input component to be reused in multiple places
   const InputContainer = () => (
-    <div className="flex items-center gap-3 p-2 px-5 bg-gradient-to-r from-violet-500/80 to-indigo-400/80 hover:from-violet-500/90 hover:to-indigo-400/90 backdrop-blur-md rounded-full shadow-lg border border-violet-300/30 transition-all min-w-[550px]">
+    <div className="flex items-center gap-3 p-2 px-5 bg-gradient-to-r from-violet-500/80 to-indigo-400/80 hover:from-violet-500/90 hover:to-indigo-400/90 backdrop-blur-md rounded-full shadow-lg border border-violet-300/30 transition-all min-w-[550px] relative z-[100]">
       <div className="relative flex-1">
         <Input 
           placeholder="Enter a topic for your mindmap..."
           value={topic}
           onChange={(e) => setTopic(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && generateMindmap()}
+          onKeyDown={(e) => {
+            e.stopPropagation(); // Prevent ReactFlow from intercepting keyboard events
+            if(e.key === 'Enter') generateMindmap();
+          }}
+          onClick={(e) => e.stopPropagation()} // Prevent click from propagating to ReactFlow
           disabled={isLoading}
           className="flex-1 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 pl-2 text-white placeholder:text-white/80"
+          autoFocus
         />
       </div>
       <Button 
         onClick={generateMindmap} 
         disabled={isLoading}
         className="rounded-full px-6 h-10 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white border-0 shadow-sm"
+        onMouseDown={(e) => e.preventDefault()} // Prevent focus loss on button click
       >
         {isLoading ? (
           <>
@@ -390,10 +397,11 @@ export default function Mindmap() {
                   type: 'custom'
                 }}
                 proOptions={{ hideAttribution: true }}
+                disableKeyboardA11y={true}
               >
                 <Background color="#e5e7eb" gap={16} size={1} />
                 <Controls />
-                <Panel position="bottom-center" className="bottom-6">
+                <Panel position="bottom-center" className="bottom-6 !z-[90]">
                   <InputContainer />
                 </Panel>
               </ReactFlow>
@@ -414,7 +422,7 @@ export default function Mindmap() {
                   </div>
                 )}
                 
-                <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2">
+                <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-[100]">
                   <InputContainer />
                 </div>
               </div>
@@ -429,28 +437,42 @@ export default function Mindmap() {
               title={`Resources for: ${selectedNode.data.label}`}
               description="Click on any resource to open it in a new tab"
             >
-              {selectedNode.data.resources && selectedNode.data.resources.length > 0 ? (
-                <div className="space-y-4">
-                  {selectedNode.data.resources.map((resource: Resource, index: number) => (
-                    <div 
-                      key={index} 
-                      className="p-4 rounded-lg border border-gray-200 hover:border-indigo-300 hover:shadow-md transition-all cursor-pointer"
-                      onClick={() => window.open(resource.url, '_blank')}
-                    >
-                      <div className="flex justify-between items-start">
-                        <h3 className="font-medium text-indigo-600 mb-1">{resource.title}</h3>
-                        <ExternalLink className="h-4 w-4 text-gray-400" />
-                      </div>
-                      <p className="text-sm text-gray-600">{resource.description}</p>
-                      <div className="mt-2 text-xs text-gray-400 truncate">{resource.url}</div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="py-8 text-center text-gray-500">
-                  <p>No resources available for this topic.</p>
+              {/* Node description section */}
+              {selectedNode.data.description && (
+                <div className="mb-6">
+                  <h3 className="text-md font-medium text-gray-800 mb-2">About this topic:</h3>
+                  <div className="p-4 bg-indigo-50 rounded-lg border border-indigo-100 text-gray-700">
+                    {selectedNode.data.description}
+                  </div>
                 </div>
               )}
+              
+              {/* Resources section */}
+              <div>
+                <h3 className="text-md font-medium text-gray-800 mb-3">Learning resources:</h3>
+                {selectedNode.data.resources && selectedNode.data.resources.length > 0 ? (
+                  <div className="space-y-4">
+                    {selectedNode.data.resources.map((resource: Resource, index: number) => (
+                      <div 
+                        key={index} 
+                        className="p-4 rounded-lg border border-gray-200 hover:border-indigo-300 hover:shadow-md transition-all cursor-pointer"
+                        onClick={() => window.open(resource.url, '_blank')}
+                      >
+                        <div className="flex justify-between items-start">
+                          <h3 className="font-medium text-indigo-600 mb-1">{resource.title}</h3>
+                          <ExternalLink className="h-4 w-4 text-gray-400" />
+                        </div>
+                        <p className="text-sm text-gray-600">{resource.description}</p>
+                        <div className="mt-2 text-xs text-gray-400 truncate">{resource.url}</div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="py-8 text-center text-gray-500">
+                    <p>No resources available for this topic.</p>
+                  </div>
+                )}
+              </div>
             </RightDrawer>
           )}
         </div>
