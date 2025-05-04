@@ -105,14 +105,14 @@ const ConceptDrawer: React.FC<DrawerProps> = ({
       {/* Drawer panel */}
       <div 
         className={cn(
-          "fixed top-0 right-0 h-full w-[400px] max-w-[90vw] bg-white z-50 shadow-xl transform transition-transform duration-300 ease-in-out border-l border-gray-200",
+          "fixed top-0 right-0 h-full w-full sm:w-[400px] max-w-full sm:max-w-[90vw] bg-white z-50 shadow-xl transform transition-transform duration-300 ease-in-out border-l border-gray-200",
           open ? "translate-x-0" : "translate-x-full"
         )}
       >
         {/* Header */}
-        <div className="px-6 py-4 border-b border-gray-200">
+        <div className="px-4 sm:px-6 py-4 border-b border-gray-200">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-indigo-700">{concept.title}</h2>
+            <h2 className="text-lg sm:text-xl font-semibold text-indigo-700">{concept.title}</h2>
             <button 
               onClick={onClose} 
               className="rounded-full p-1 hover:bg-gray-100 transition-colors"
@@ -120,7 +120,7 @@ const ConceptDrawer: React.FC<DrawerProps> = ({
               <X size={18} className="text-gray-500" />
             </button>
           </div>
-          <div className="mt-1 flex items-center gap-2">
+          <div className="mt-1 flex flex-wrap items-center gap-2">
             <span className="text-sm text-gray-500">
               {concept.completed ? 'Completed' : 'Pending'}
             </span>
@@ -143,7 +143,7 @@ const ConceptDrawer: React.FC<DrawerProps> = ({
         </div>
         
         {/* Content */}
-        <div className="p-6 overflow-y-auto" style={{ height: "calc(100% - 70px)" }}>
+        <div className="p-4 sm:p-6 overflow-y-auto" style={{ height: "calc(100% - 70px)" }}>
           {/* Concept details section */}
           <div className="mb-6">
             <div className="flex justify-between items-center mb-2">
@@ -160,7 +160,7 @@ const ConceptDrawer: React.FC<DrawerProps> = ({
             </div>
             
             {isEditingDetails ? (
-              <div className="space-y-3 p-4 bg-indigo-50 rounded-lg border border-indigo-100">
+              <div className="space-y-3 p-3 sm:p-4 bg-indigo-50 rounded-lg border border-indigo-100">
                 <div>
                   <label className="text-sm text-gray-600 mb-1 block">Title</label>
                   <Input
@@ -188,13 +188,13 @@ const ConceptDrawer: React.FC<DrawerProps> = ({
                 </div>
                 <div>
                   <label className="text-sm text-gray-600 mb-1 block">Priority</label>
-                  <div className="flex space-x-2">
+                  <div className="flex flex-wrap sm:flex-nowrap space-y-2 sm:space-y-0 sm:space-x-2">
                     <Button 
                       type="button" 
                       variant={editablePriority === 'low' ? 'default' : 'outline'} 
                       size="sm"
                       onClick={() => setEditablePriority('low')}
-                      className={editablePriority === 'low' ? 'bg-green-500 hover:bg-green-600' : ''}
+                      className={`w-full sm:w-auto ${editablePriority === 'low' ? 'bg-green-500 hover:bg-green-600' : ''}`}
                     >
                       Low
                     </Button>
@@ -203,7 +203,7 @@ const ConceptDrawer: React.FC<DrawerProps> = ({
                       variant={editablePriority === 'medium' ? 'default' : 'outline'} 
                       size="sm"
                       onClick={() => setEditablePriority('medium')}
-                      className={editablePriority === 'medium' ? 'bg-yellow-500 hover:bg-yellow-600' : ''}
+                      className={`w-full sm:w-auto ${editablePriority === 'medium' ? 'bg-yellow-500 hover:bg-yellow-600' : ''}`}
                     >
                       Medium
                     </Button>
@@ -212,7 +212,7 @@ const ConceptDrawer: React.FC<DrawerProps> = ({
                       variant={editablePriority === 'high' ? 'default' : 'outline'} 
                       size="sm"
                       onClick={() => setEditablePriority('high')}
-                      className={editablePriority === 'high' ? 'bg-red-500 hover:bg-red-600' : ''}
+                      className={`w-full sm:w-auto ${editablePriority === 'high' ? 'bg-red-500 hover:bg-red-600' : ''}`}
                     >
                       High
                     </Button>
@@ -370,8 +370,8 @@ const TaskStats: React.FC<StatsProps> = ({ concepts }) => {
   }).length;
   
   return (
-    <div className="bg-white p-4 rounded-lg shadow mb-6 border border-gray-200">
-      <div className="flex items-center justify-between mb-4">
+    <div className="bg-white p-3 sm:p-4 rounded-lg shadow mb-6 border border-gray-200">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-2">
         <h3 className="text-lg font-medium text-gray-800">Task Statistics</h3>
         <div className="flex items-center space-x-2">
           <PieChart className="h-5 w-5 text-indigo-500" />
@@ -379,21 +379,21 @@ const TaskStats: React.FC<StatsProps> = ({ concepts }) => {
         </div>
       </div>
       
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-        <div className="bg-indigo-50 p-3 rounded-lg">
-          <div className="text-indigo-600 text-xl font-semibold">{total}</div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 mb-4">
+        <div className="bg-indigo-50 p-2 sm:p-3 rounded-lg">
+          <div className="text-indigo-600 text-lg sm:text-xl font-semibold">{total}</div>
           <div className="text-xs text-gray-500">Total Tasks</div>
         </div>
-        <div className="bg-green-50 p-3 rounded-lg">
-          <div className="text-green-600 text-xl font-semibold">{completed}</div>
+        <div className="bg-green-50 p-2 sm:p-3 rounded-lg">
+          <div className="text-green-600 text-lg sm:text-xl font-semibold">{completed}</div>
           <div className="text-xs text-gray-500">Completed</div>
         </div>
-        <div className="bg-yellow-50 p-3 rounded-lg">
-          <div className="text-yellow-600 text-xl font-semibold">{pending}</div>
+        <div className="bg-yellow-50 p-2 sm:p-3 rounded-lg">
+          <div className="text-yellow-600 text-lg sm:text-xl font-semibold">{pending}</div>
           <div className="text-xs text-gray-500">Pending</div>
         </div>
-        <div className="bg-red-50 p-3 rounded-lg">
-          <div className="text-red-600 text-xl font-semibold">{overdue}</div>
+        <div className="bg-red-50 p-2 sm:p-3 rounded-lg">
+          <div className="text-red-600 text-lg sm:text-xl font-semibold">{overdue}</div>
           <div className="text-xs text-gray-500">Overdue</div>
         </div>
       </div>
@@ -411,7 +411,7 @@ const TaskStats: React.FC<StatsProps> = ({ concepts }) => {
         </div>
       </div>
       
-      <div className="grid grid-cols-3 gap-2 mt-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-4">
         <div className="flex items-center">
           <div className="w-3 h-3 rounded-full bg-red-500 mr-2"></div>
           <span className="text-xs text-gray-500">High: {highPriority}</span>
@@ -777,8 +777,8 @@ export default function Todo() {
   return (
     <div className="container px-6 py-6 mx-auto h-full flex flex-col">
       <div className="mb-6">
-        <div className="flex justify-between items-center mb-4">
-          <div className="flex items-center space-x-2">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-2 sm:space-y-0 mb-4">
+          <div className="flex flex-wrap items-center gap-2">
             <Button 
               variant="outline"
               onClick={() => setFilterOption('all')}
@@ -810,7 +810,7 @@ export default function Todo() {
               variant="outline" 
               onClick={() => setShowAddOptions(!showAddOptions)}
               disabled={isLoading}
-              className="flex items-center"
+              className="flex items-center w-full sm:w-auto"
             >
               <Plus className="h-4 w-4 mr-1" />
               Add Todo
@@ -884,15 +884,15 @@ export default function Todo() {
       
       {/* Add Concept Dialog - Using shadcn Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-[500px] bg-slate-50">
+        <DialogContent className="w-[95vw] max-w-[500px] bg-slate-50">
           <DialogHeader>
-            <DialogTitle className="text-xl text-indigo-700">Add New Concept</DialogTitle>
+            <DialogTitle className="text-lg sm:text-xl text-indigo-700">Add New Concept</DialogTitle>
             <DialogDescription>
               Fill in the details for your new concept or task.
             </DialogDescription>
           </DialogHeader>
           
-          <div className="space-y-4 py-4">
+          <div className="space-y-4 py-2 sm:py-4">
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700">Title</label>
               <Input
@@ -925,13 +925,13 @@ export default function Todo() {
             
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700">Priority</label>
-              <div className="flex space-x-2">
+              <div className="flex flex-wrap sm:flex-nowrap gap-2">
                 <Button 
                   type="button" 
                   variant={newConcept.priority === 'low' ? 'default' : 'outline'} 
                   size="sm"
                   onClick={() => setNewConcept({...newConcept, priority: 'low'})}
-                  className={newConcept.priority === 'low' ? 'bg-green-500 hover:bg-green-600' : ''}
+                  className={`w-full sm:w-auto ${newConcept.priority === 'low' ? 'bg-green-500 hover:bg-green-600' : ''}`}
                 >
                   Low
                 </Button>
@@ -940,7 +940,7 @@ export default function Todo() {
                   variant={newConcept.priority === 'medium' ? 'default' : 'outline'} 
                   size="sm"
                   onClick={() => setNewConcept({...newConcept, priority: 'medium'})}
-                  className={newConcept.priority === 'medium' ? 'bg-yellow-500 hover:bg-yellow-600' : ''}
+                  className={`w-full sm:w-auto ${newConcept.priority === 'medium' ? 'bg-yellow-500 hover:bg-yellow-600' : ''}`}
                 >
                   Medium
                 </Button>
@@ -949,7 +949,7 @@ export default function Todo() {
                   variant={newConcept.priority === 'high' ? 'default' : 'outline'} 
                   size="sm"
                   onClick={() => setNewConcept({...newConcept, priority: 'high'})}
-                  className={newConcept.priority === 'high' ? 'bg-red-500 hover:bg-red-600' : ''}
+                  className={`w-full sm:w-auto ${newConcept.priority === 'high' ? 'bg-red-500 hover:bg-red-600' : ''}`}
                 >
                   High
                 </Button>
@@ -957,14 +957,14 @@ export default function Todo() {
             </div>
           </div>
           
-          <DialogFooter>
+          <DialogFooter className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-0">
             <DialogClose asChild>
-              <Button variant="outline">Cancel</Button>
+              <Button variant="outline" className="w-full sm:w-auto">Cancel</Button>
             </DialogClose>
             <Button 
               onClick={addConceptManually}
               disabled={!newConcept.title}
-              className="bg-indigo-600 hover:bg-indigo-700"
+              className="bg-indigo-600 hover:bg-indigo-700 w-full sm:w-auto"
             >
               Add Concept
             </Button>
@@ -973,10 +973,10 @@ export default function Todo() {
       </Dialog>
       
       {/* Concepts section */}
-      <div className="space-y-4 flex-1 overflow-y-auto">
+      <div className="space-y-4 flex-1 overflow-y-auto pb-24">
         {concepts.length > 0 ? (
           filteredConcepts.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredConcepts
                 .map(concept => (
                   <div
@@ -1167,43 +1167,46 @@ export default function Todo() {
       </div>
 
       {/* Floating input at the bottom */}
-      <div className="mb-8 fixed bottom-0 max-w-7xl w-full">
-        <div className="flex max-w-2xl mx-auto items-center gap-3 p-2 px-5 bg-gradient-to-r from-violet-500/80 to-indigo-400/80 hover:from-violet-500/90 hover:to-indigo-400/90 backdrop-blur-md rounded-full shadow-lg border border-violet-300/30 transition-all relative">
-          <div className="relative flex-1">
-            <Input 
-              placeholder="What do you want to do today?"
-              value={todoText}
-              onChange={(e) => setTodoText(e.target.value)}
-              onKeyDown={(e) => {
-                if(e.key === 'Enter') generateConcepts();
-              }}
-              disabled={isLoading}
-              className="flex-1 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 pl-4 text-white placeholder:text-white/80"
-              autoFocus
-            />
+      <div className="mb-8 fixed bottom-0 left-0 sm:left-[325px] right-0 z-10">
+        <div className="flex justify-center">
+          <div className="flex max-w-xl w-full mx-auto px-4 items-center gap-3 p-2 px-3 sm:px-5 bg-gradient-to-r from-violet-500/80 to-indigo-400/80 hover:from-violet-500/90 hover:to-indigo-400/90 backdrop-blur-md rounded-full shadow-lg border border-violet-300/30 transition-all">
+            <div className="relative flex-1">
+              <Input 
+                placeholder="What do you want to do today?"
+                value={todoText}
+                onChange={(e) => setTodoText(e.target.value)}
+                onKeyDown={(e) => {
+                  if(e.key === 'Enter') generateConcepts();
+                }}
+                disabled={isLoading}
+                className="flex-1 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 pl-4 text-white placeholder:text-white/80 text-sm sm:text-base"
+                autoFocus
+              />
+            </div>
+            <Button 
+              onClick={generateConcepts} 
+              disabled={isLoading || !todoText.trim()}
+              className="rounded-full px-3 sm:px-6 h-10 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white border-0 shadow-sm"
+            >
+              {isLoading ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-1 sm:mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  <span className="hidden sm:inline">Generating...</span>
+                  <span className="sm:hidden">...</span>
+                </>
+              ) : (
+                <>
+                  <svg className="h-4 w-4 mr-1" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M4.75 13.25L10.25 18.75L19.25 5.75" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                  <span className="hidden sm:inline">Generate</span>
+                </>
+              )}
+            </Button>
           </div>
-          <Button 
-            onClick={generateConcepts} 
-            disabled={isLoading || !todoText.trim()}
-            className="rounded-full px-6 h-10 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white border-0 shadow-sm"
-          >
-            {isLoading ? (
-              <>
-                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Generating...
-              </>
-            ) : (
-              <>
-                <svg className="h-4 w-4 mr-1" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M4.75 13.25L10.25 18.75L19.25 5.75" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-                Generate
-              </>
-            )}
-          </Button>
         </div>
       </div>
       
