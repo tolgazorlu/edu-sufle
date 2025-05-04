@@ -105,7 +105,7 @@ export function GoogleAiExample() {
         <CardHeader>
           <CardTitle>Google AI Example</CardTitle>
           <CardDescription>
-            Try out Google's Gemini 1.5 Flash capabilities
+            Try out Google&apos;s Gemini 1.5 Flash capabilities
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -128,7 +128,7 @@ export function GoogleAiExample() {
       <CardHeader>
         <CardTitle>Google AI Example</CardTitle>
         <CardDescription>
-          Try out Google's Gemini 1.5 Flash capabilities
+          Try out Google&apos;s Gemini 1.5 Flash capabilities
         </CardDescription>
       </CardHeader>
       <CardContent>
