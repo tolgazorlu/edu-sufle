@@ -199,6 +199,7 @@ export default function Todo() {
     resources: []
   });
   const [editingConcept, setEditingConcept] = useState<string | null>(null);
+  const [aiError, setAiError] = useState<string | null>(null);
 
   // Load todos from localStorage on initial render
   useEffect(() => {
@@ -326,28 +327,45 @@ export default function Todo() {
 
   // Generate concepts based on the provided todo text
   const generateConcepts = async () => {
-    if (!todoText) return;
+    if (!todoText.trim()) return;
     
     setIsLoading(true);
+    setAiError(null);
     
-    // Simulate API call with a delay
-    setTimeout(() => {
-      // Create at least 5 concepts from our predefined list
-      const conceptKeys = Object.keys(sampleResources);
-      const selectedKeys = conceptKeys.slice(0, 5);
+    try {
+      const response = await fetch('/api/todo', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ topic: todoText.trim() }),
+      });
       
-      const newConcepts = selectedKeys.map((title, index) => ({
-        id: `concept-${Date.now()}-${index}`,
-        title,
-        description: getConceptDescription(title),
-        completed: false,
-        resources: getResourcesForConcept(title)
-      }));
+      const data = await response.json();
       
-      setConcepts(prevConcepts => [...prevConcepts, ...newConcepts]);
-      setTodoText('');
+      if (data.error) {
+        setAiError(data.error);
+        console.error('Error generating concepts:', data.error);
+      }
+      
+      if (data.result?.concepts && Array.isArray(data.result.concepts)) {
+        // Add unique IDs to ensure no collisions
+        const newConcepts = data.result.concepts.map((concept: any) => ({
+          ...concept,
+          id: `ai-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+        }));
+        
+        setConcepts(prev => [...newConcepts, ...prev]);
+        setTodoText('');
+      } else {
+        setAiError('Failed to generate concepts. Try a different topic.');
+      }
+    } catch (error) {
+      console.error('Error calling AI API:', error);
+      setAiError('Network error or invalid response. Please try again.');
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
   };
 
   // Handle clicking on concept to show resources
@@ -424,63 +442,76 @@ export default function Todo() {
   };
 
   return (
-    <div className="container py-6 px-6 max-w-7xl">
-      
-      {/* Manual concept addition */}
+    <div className="container px-4 py-6 mx-auto h-full flex flex-col">
       <div className="mb-6">
-        <div className="flex justify-end items-center mb-4">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-2xl font-bold text-indigo-700">Learning Path Todo</h2>
           <Button 
-            onClick={() => setIsAddingManually(!isAddingManually)}
-            variant="outline"
-            size="sm"
+            variant="outline" 
+            onClick={() => setIsAddingManually(true)}
+            disabled={isLoading}
             className="flex items-center"
           >
-            {isAddingManually ? 'Cancel' : (
-              <>
-                <Plus className="h-4 w-4 mr-1" />
-                Add Topic
-              </>
-            )}
+            <Plus className="h-4 w-4 mr-1" />
+            Add Manually
           </Button>
         </div>
-        
-        {isAddingManually && (
-          <div className="p-5 border border-indigo-200 rounded-lg bg-indigo-50 mb-6">
-            <h3 className="text-md font-medium mb-3 text-indigo-700">Add New Concept</h3>
-            <div className="space-y-3">
-              <div>
-                <label className="text-sm text-gray-600 mb-1 block">Title</label>
-                <Input
-                  placeholder="Concept Title"
-                  value={newConcept.title}
-                  onChange={(e) => setNewConcept({...newConcept, title: e.target.value})}
-                  className="w-full"
-                />
-              </div>
-              <div>
-                <label className="text-sm text-gray-600 mb-1 block">Description</label>
-                <Input
-                  placeholder="Description"
-                  value={newConcept.description}
-                  onChange={(e) => setNewConcept({...newConcept, description: e.target.value})}
-                  className="w-full"
-                />
-              </div>
-              <div className="flex justify-end pt-2">
-                <Button 
-                  onClick={addConceptManually}
-                  disabled={!newConcept.title}
-                >
-                  Add Concept
-                </Button>
-              </div>
-            </div>
+        {aiError && (
+          <div className="mt-2 text-sm text-red-500 bg-red-50 p-2 rounded-md max-w-3xl">
+            {aiError}
           </div>
         )}
       </div>
+
+      {/* Manual concept addition */}
+      {isAddingManually && (
+        <div className="p-5 border-2 border-indigo-200 rounded-lg bg-indigo-50 mb-6 max-w-3xl">
+          <div className="flex justify-between items-center mb-3">
+            <h3 className="text-lg font-medium text-indigo-700">Add New Concept</h3>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => setIsAddingManually(false)}
+              className="text-gray-500"
+            >
+              <X className="h-4 w-4 mr-1" />
+              Cancel
+            </Button>
+          </div>
+          <div className="space-y-3">
+            <div>
+              <label className="text-sm text-gray-600 mb-1 block">Title</label>
+              <Input
+                placeholder="Concept Title"
+                value={newConcept.title}
+                onChange={(e) => setNewConcept({...newConcept, title: e.target.value})}
+                className="w-full border-2 border-indigo-100 focus-visible:ring-indigo-300 focus-visible:border-indigo-300"
+              />
+            </div>
+            <div>
+              <label className="text-sm text-gray-600 mb-1 block">Description</label>
+              <Input
+                placeholder="Description"
+                value={newConcept.description}
+                onChange={(e) => setNewConcept({...newConcept, description: e.target.value})}
+                className="w-full border-2 border-indigo-100 focus-visible:ring-indigo-300 focus-visible:border-indigo-300"
+              />
+            </div>
+            <div className="flex justify-end pt-2">
+              <Button 
+                onClick={addConceptManually}
+                disabled={!newConcept.title}
+                className="bg-indigo-600 hover:bg-indigo-700"
+              >
+                Add Concept
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
       
       {/* Concepts section */}
-      <div className="space-y-4">
+      <div className="space-y-4 flex-1 overflow-y-auto">
         {concepts.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {concepts.map(concept => (
@@ -607,6 +638,7 @@ export default function Todo() {
         )}
       </div>
 
+      {/* Floating input at the bottom */}
       <div className="mb-8 fixed bottom-0 max-w-7xl w-full">
         <div className="flex max-w-2xl mx-auto items-center gap-3 p-2 px-5 bg-gradient-to-r from-violet-500/80 to-indigo-400/80 hover:from-violet-500/90 hover:to-indigo-400/90 backdrop-blur-md rounded-full shadow-lg border border-violet-300/30 transition-all relative">
           <div className="relative flex-1">
@@ -624,7 +656,7 @@ export default function Todo() {
           </div>
           <Button 
             onClick={generateConcepts} 
-            disabled={isLoading}
+            disabled={isLoading || !todoText.trim()}
             className="rounded-full px-6 h-10 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white border-0 shadow-sm"
           >
             {isLoading ? (
