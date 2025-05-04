@@ -41,6 +41,8 @@ export async function POST(request: Request) {
             "title": "Main Concept",
             "description": "A comprehensive and detailed explanation of this concept covering key points, importance, and fundamental ideas. This should be 3-5 sentences that thoroughly explain the concept and its significance in the learning path.",
             "completed": false,
+            "dueDate": "",
+            "priority": "medium",
             "resources": [
               {
                 "title": "Resource Title 1",
@@ -59,6 +61,8 @@ export async function POST(request: Request) {
             "title": "Secondary Concept",
             "description": "Detailed explanation of this concept, its relationship to the main topic, and why it's important to understand. This description should provide clear context about the concept and how it fits into the broader learning path.",
             "completed": false,
+            "dueDate": "",
+            "priority": "medium",
             "resources": [
               {
                 "title": "Resource Title 3",
@@ -116,6 +120,8 @@ export async function POST(request: Request) {
             title: topic || 'Main Concept',
             description: 'This is a simplified todo list. The AI response took too long or encountered an error.',
             completed: false,
+            dueDate: '',
+            priority: 'medium',
             resources: [
               {
                 title: 'Wikipedia',
@@ -134,6 +140,8 @@ export async function POST(request: Request) {
             title: 'Try a simpler topic',
             description: 'Try a more specific topic or a shorter query for better results.',
             completed: false,
+            dueDate: '',
+            priority: 'low',
             resources: []
           }
         ]
@@ -283,6 +291,8 @@ export async function POST(request: Request) {
             title: concept.title || `Concept ${index + 1}`,
             description: concept.description || "No description provided",
             completed: concept.completed === undefined ? false : concept.completed,
+            dueDate: concept.dueDate || "",
+            priority: concept.priority || "medium",
             resources: Array.isArray(concept.resources) ? concept.resources : []
           };
         });

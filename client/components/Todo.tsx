@@ -1,10 +1,20 @@
 'use client'
 
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, CheckCircle, Circle, Info, X, ExternalLink, Edit, Save } from 'lucide-react';
+import { Plus, Trash2, CheckCircle, Circle, Info, X, ExternalLink, Edit, Save, Clock, Star, Calendar, Filter, BarChart, PieChart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogFooter, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogTrigger,
+  DialogClose
+} from '@/components/ui/dialog';
 
 // Resource type for learning materials
 interface Resource {
@@ -20,6 +30,8 @@ interface Concept {
   description: string;
   completed: boolean;
   resources: Resource[];
+  dueDate?: string;
+  priority?: 'low' | 'medium' | 'high';
 }
 
 // Right drawer component for displaying concept details
@@ -29,11 +41,33 @@ interface DrawerProps {
   concept: Concept | null;
   onResourceAdd: (conceptId: string, resource: Resource) => void;
   onResourceDelete: (conceptId: string, resourceIndex: number) => void;
+  onConceptUpdate: (conceptId: string, updates: Partial<Concept>) => void;
 }
 
-const ConceptDrawer: React.FC<DrawerProps> = ({ open, onClose, concept, onResourceAdd, onResourceDelete }) => {
+const ConceptDrawer: React.FC<DrawerProps> = ({ 
+  open, 
+  onClose, 
+  concept, 
+  onResourceAdd, 
+  onResourceDelete,
+  onConceptUpdate 
+}) => {
   const [newResource, setNewResource] = useState<Resource>({ title: '', description: '', url: '' });
   const [isAddingResource, setIsAddingResource] = useState(false);
+  const [isEditingDetails, setIsEditingDetails] = useState(false);
+  const [editableTitle, setEditableTitle] = useState('');
+  const [editableDescription, setEditableDescription] = useState('');
+  const [editableDueDate, setEditableDueDate] = useState('');
+  const [editablePriority, setEditablePriority] = useState<'low' | 'medium' | 'high'>('medium');
+
+  useEffect(() => {
+    if (concept) {
+      setEditableTitle(concept.title);
+      setEditableDescription(concept.description);
+      setEditableDueDate(concept.dueDate || '');
+      setEditablePriority(concept.priority || 'medium');
+    }
+  }, [concept]);
 
   if (!concept) return null;
 
@@ -42,6 +76,19 @@ const ConceptDrawer: React.FC<DrawerProps> = ({ open, onClose, concept, onResour
     onResourceAdd(concept.id, newResource);
     setNewResource({ title: '', description: '', url: '' });
     setIsAddingResource(false);
+  };
+
+  const handleSaveDetails = () => {
+    if (!editableTitle) return;
+    
+    onConceptUpdate(concept.id, {
+      title: editableTitle,
+      description: editableDescription,
+      dueDate: editableDueDate,
+      priority: editablePriority
+    });
+    
+    setIsEditingDetails(false);
   };
 
   return (
@@ -73,17 +120,126 @@ const ConceptDrawer: React.FC<DrawerProps> = ({ open, onClose, concept, onResour
               <X size={18} className="text-gray-500" />
             </button>
           </div>
-          <p className="mt-1 text-sm text-gray-500">Click on any resource to open it in a new tab</p>
+          <div className="mt-1 flex items-center gap-2">
+            <span className="text-sm text-gray-500">
+              {concept.completed ? 'Completed' : 'Pending'}
+            </span>
+            {concept.dueDate && (
+              <span className="text-sm text-blue-500 flex items-center">
+                <Calendar className="h-3 w-3 mr-1" />
+                Due: {new Date(concept.dueDate).toLocaleDateString()}
+              </span>
+            )}
+            {concept.priority && (
+              <span className={`text-sm flex items-center ${
+                concept.priority === 'high' ? 'text-red-500' : 
+                concept.priority === 'medium' ? 'text-yellow-600' : 'text-green-600'
+              }`}>
+                <Star className="h-3 w-3 mr-1" />
+                {concept.priority.charAt(0).toUpperCase() + concept.priority.slice(1)}
+              </span>
+            )}
+          </div>
         </div>
         
         {/* Content */}
         <div className="p-6 overflow-y-auto" style={{ height: "calc(100% - 70px)" }}>
-          {/* Concept description section */}
+          {/* Concept details section */}
           <div className="mb-6">
-            <h3 className="text-md font-medium text-gray-800 mb-2">About this concept:</h3>
-            <div className="p-4 bg-indigo-50 rounded-lg border border-indigo-100 text-gray-700">
-              {concept.description}
+            <div className="flex justify-between items-center mb-2">
+              <h3 className="text-md font-medium text-gray-800">Details</h3>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setIsEditingDetails(!isEditingDetails)}
+                className="flex items-center text-xs"
+              >
+                <Edit className="h-3 w-3 mr-1" />
+                Edit Details
+              </Button>
             </div>
+            
+            {isEditingDetails ? (
+              <div className="space-y-3 p-4 bg-indigo-50 rounded-lg border border-indigo-100">
+                <div>
+                  <label className="text-sm text-gray-600 mb-1 block">Title</label>
+                  <Input
+                    value={editableTitle}
+                    onChange={(e) => setEditableTitle(e.target.value)}
+                    className="w-full text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm text-gray-600 mb-1 block">Description</label>
+                  <Input
+                    value={editableDescription}
+                    onChange={(e) => setEditableDescription(e.target.value)}
+                    className="w-full text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm text-gray-600 mb-1 block">Due Date</label>
+                  <Input
+                    type="date"
+                    value={editableDueDate}
+                    onChange={(e) => setEditableDueDate(e.target.value)}
+                    className="w-full text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm text-gray-600 mb-1 block">Priority</label>
+                  <div className="flex space-x-2">
+                    <Button 
+                      type="button" 
+                      variant={editablePriority === 'low' ? 'default' : 'outline'} 
+                      size="sm"
+                      onClick={() => setEditablePriority('low')}
+                      className={editablePriority === 'low' ? 'bg-green-500 hover:bg-green-600' : ''}
+                    >
+                      Low
+                    </Button>
+                    <Button 
+                      type="button" 
+                      variant={editablePriority === 'medium' ? 'default' : 'outline'} 
+                      size="sm"
+                      onClick={() => setEditablePriority('medium')}
+                      className={editablePriority === 'medium' ? 'bg-yellow-500 hover:bg-yellow-600' : ''}
+                    >
+                      Medium
+                    </Button>
+                    <Button 
+                      type="button" 
+                      variant={editablePriority === 'high' ? 'default' : 'outline'} 
+                      size="sm"
+                      onClick={() => setEditablePriority('high')}
+                      className={editablePriority === 'high' ? 'bg-red-500 hover:bg-red-600' : ''}
+                    >
+                      High
+                    </Button>
+                  </div>
+                </div>
+                <div className="flex justify-end space-x-2 pt-2">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => setIsEditingDetails(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    onClick={handleSaveDetails}
+                    disabled={!editableTitle}
+                  >
+                    Save
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="p-4 bg-indigo-50 rounded-lg border border-indigo-100 text-gray-700">
+                {concept.description}
+              </div>
+            )}
           </div>
           
           {/* Resources section */}
@@ -185,6 +341,94 @@ const ConceptDrawer: React.FC<DrawerProps> = ({ open, onClose, concept, onResour
   );
 };
 
+// Task statistics component
+interface StatsProps {
+  concepts: Concept[];
+}
+
+const TaskStats: React.FC<StatsProps> = ({ concepts }) => {
+  // Calculate statistics
+  const total = concepts.length;
+  const completed = concepts.filter(c => c.completed).length;
+  const pending = total - completed;
+  const completionRate = total > 0 ? Math.round((completed / total) * 100) : 0;
+  
+  // Count by priority
+  const highPriority = concepts.filter(c => c.priority === 'high').length;
+  const mediumPriority = concepts.filter(c => c.priority === 'medium').length;
+  const lowPriority = concepts.filter(c => c.priority === 'low').length;
+  
+  // Count overdue tasks
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const overdue = concepts.filter(c => {
+    if (!c.completed && c.dueDate) {
+      const dueDate = new Date(c.dueDate);
+      return dueDate < today;
+    }
+    return false;
+  }).length;
+  
+  return (
+    <div className="bg-white p-4 rounded-lg shadow mb-6 border border-gray-200">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-medium text-gray-800">Task Statistics</h3>
+        <div className="flex items-center space-x-2">
+          <PieChart className="h-5 w-5 text-indigo-500" />
+          <span className="text-sm font-medium text-gray-600">Progress Overview</span>
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+        <div className="bg-indigo-50 p-3 rounded-lg">
+          <div className="text-indigo-600 text-xl font-semibold">{total}</div>
+          <div className="text-xs text-gray-500">Total Tasks</div>
+        </div>
+        <div className="bg-green-50 p-3 rounded-lg">
+          <div className="text-green-600 text-xl font-semibold">{completed}</div>
+          <div className="text-xs text-gray-500">Completed</div>
+        </div>
+        <div className="bg-yellow-50 p-3 rounded-lg">
+          <div className="text-yellow-600 text-xl font-semibold">{pending}</div>
+          <div className="text-xs text-gray-500">Pending</div>
+        </div>
+        <div className="bg-red-50 p-3 rounded-lg">
+          <div className="text-red-600 text-xl font-semibold">{overdue}</div>
+          <div className="text-xs text-gray-500">Overdue</div>
+        </div>
+      </div>
+      
+      <div className="mb-2">
+        <div className="flex justify-between items-center mb-1">
+          <span className="text-xs font-medium text-gray-500">Completion</span>
+          <span className="text-xs font-medium text-indigo-600">{completionRate}%</span>
+        </div>
+        <div className="w-full bg-gray-200 rounded-full h-2.5">
+          <div 
+            className="bg-indigo-600 h-2.5 rounded-full" 
+            style={{ width: `${completionRate}%` }}
+          ></div>
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-3 gap-2 mt-4">
+        <div className="flex items-center">
+          <div className="w-3 h-3 rounded-full bg-red-500 mr-2"></div>
+          <span className="text-xs text-gray-500">High: {highPriority}</span>
+        </div>
+        <div className="flex items-center">
+          <div className="w-3 h-3 rounded-full bg-yellow-500 mr-2"></div>
+          <span className="text-xs text-gray-500">Medium: {mediumPriority}</span>
+        </div>
+        <div className="flex items-center">
+          <div className="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
+          <span className="text-xs text-gray-500">Low: {lowPriority}</span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default function Todo() {
   const [todoText, setTodoText] = useState('');
   const [concepts, setConcepts] = useState<Concept[]>([]);
@@ -196,10 +440,16 @@ export default function Todo() {
     title: '',
     description: '',
     completed: false,
-    resources: []
+    resources: [],
+    dueDate: '',
+    priority: 'medium'
   });
   const [editingConcept, setEditingConcept] = useState<string | null>(null);
   const [aiError, setAiError] = useState<string | null>(null);
+  const [showAddOptions, setShowAddOptions] = useState(false);
+  const [filterOption, setFilterOption] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   // Load todos from localStorage on initial render
   useEffect(() => {
@@ -325,6 +575,21 @@ export default function Todo() {
     return sampleResources[title] || [];
   };
 
+  // Add a concept with sample data
+  const addSampleConcept = (title: string, priority: 'low' | 'medium' | 'high', dueDate: string = '') => {
+    const concept: Concept = {
+      id: `sample-${Date.now()}`,
+      title,
+      description: getConceptDescription(title),
+      completed: false,
+      resources: getResourcesForConcept(title),
+      priority,
+      dueDate
+    };
+    
+    setConcepts(prev => [concept, ...prev]);
+  };
+
   // Generate concepts based on the provided todo text
   const generateConcepts = async () => {
     if (!todoText.trim()) return;
@@ -352,7 +617,10 @@ export default function Todo() {
         // Add unique IDs to ensure no collisions
         const newConcepts = data.result.concepts.map((concept: any) => ({
           ...concept,
-          id: `ai-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+          id: `ai-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          // Ensure dueDate and priority fields exist
+          dueDate: concept.dueDate || '',
+          priority: concept.priority || 'medium'
         }));
         
         setConcepts(prev => [...newConcepts, ...prev]);
@@ -400,9 +668,51 @@ export default function Todo() {
       title: '',
       description: '',
       completed: false,
-      resources: []
+      resources: [],
+      dueDate: '',
+      priority: 'medium'
     });
-    setIsAddingManually(false);
+    setDialogOpen(false);
+  };
+
+  // Set preset task templates
+  const setSimpleTask = () => {
+    setNewConcept({
+      title: '',
+      description: '',
+      completed: false,
+      resources: [],
+      dueDate: '',
+      priority: 'medium'
+    });
+    setDialogOpen(true);
+    setShowAddOptions(false);
+  };
+
+  const setPriorityTask = () => {
+    setNewConcept({
+      title: 'Important Task',
+      description: 'High priority task that needs attention',
+      completed: false,
+      resources: [],
+      dueDate: '',
+      priority: 'high'
+    });
+    setDialogOpen(true);
+    setShowAddOptions(false);
+  };
+
+  const setScheduledTask = () => {
+    setNewConcept({
+      title: 'Scheduled Task',
+      description: 'Task with a deadline',
+      completed: false,
+      resources: [],
+      dueDate: new Date(Date.now() + 86400000).toISOString().split('T')[0], // Tomorrow
+      priority: 'medium'
+    });
+    setDialogOpen(true);
+    setShowAddOptions(false);
   };
 
   // Start editing a concept
@@ -441,180 +751,365 @@ export default function Todo() {
     ));
   };
 
+  // Filter concepts based on search query
+  const filteredConcepts = concepts.filter(concept => {
+    // First filter by completion status
+    if (filterOption === 'completed' && !concept.completed) return false;
+    if (filterOption === 'pending' && concept.completed) return false;
+    
+    // Then by search query
+    if (searchQuery.trim() === '') return true;
+    
+    const query = searchQuery.toLowerCase();
+    return (
+      concept.title.toLowerCase().includes(query) ||
+      concept.description.toLowerCase().includes(query)
+    );
+  });
+
+  // Update a concept's details
+  const updateConceptDetails = (conceptId: string, updates: Partial<Concept>) => {
+    setConcepts(concepts.map(concept => 
+      concept.id === conceptId ? { ...concept, ...updates } : concept
+    ));
+  };
+
   return (
     <div className="container px-6 py-6 mx-auto h-full flex flex-col">
       <div className="mb-6">
-        <div className="flex justify-end items-center mb-4">
-          {/* <h2 className="text-2xl font-bold text-indigo-700">Learning Path Todo</h2> */}
-          <Button 
-            variant="outline" 
-            onClick={() => setIsAddingManually(true)}
-            disabled={isLoading}
-            className="flex items-center"
-          >
-            <Plus className="h-4 w-4 mr-1" />
-            Add Manually
-          </Button>
+        <div className="flex justify-between items-center mb-4">
+          <div className="flex items-center space-x-2">
+            <Button 
+              variant="outline"
+              onClick={() => setFilterOption('all')}
+              className={`flex items-center ${filterOption === 'all' ? 'bg-indigo-100' : ''}`}
+            >
+              <Filter className="h-4 w-4 mr-1" />
+              All
+            </Button>
+            <Button 
+              variant="outline"
+              onClick={() => setFilterOption('completed')}
+              className={`flex items-center ${filterOption === 'completed' ? 'bg-green-100' : ''}`}
+            >
+              <CheckCircle className="h-4 w-4 mr-1" />
+              Completed
+            </Button>
+            <Button 
+              variant="outline"
+              onClick={() => setFilterOption('pending')}
+              className={`flex items-center ${filterOption === 'pending' ? 'bg-yellow-100' : ''}`}
+            >
+              <Clock className="h-4 w-4 mr-1" />
+              Pending
+            </Button>
+          </div>
+          
+          <div className="relative">
+            <Button 
+              variant="outline" 
+              onClick={() => setShowAddOptions(!showAddOptions)}
+              disabled={isLoading}
+              className="flex items-center"
+            >
+              <Plus className="h-4 w-4 mr-1" />
+              Add Todo
+            </Button>
+            
+            {showAddOptions && (
+              <div className="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10">
+                <div className="py-1" role="menu" aria-orientation="vertical">
+                  <button
+                    onClick={setSimpleTask}
+                    className="text-left w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                  >
+                    <Plus className="h-4 w-4 mr-2 text-gray-500" />
+                    Simple Todo (Boring 😒)
+                  </button>
+                  <button
+                    onClick={setPriorityTask}
+                    className="text-left w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                  >
+                    <Star className="h-4 w-4 mr-2 text-yellow-500" />
+                    Priority Task
+                  </button>
+                  <button
+                    onClick={setScheduledTask}
+                    className="text-left w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                  >
+                    <Calendar className="h-4 w-4 mr-2 text-blue-500" />
+                    Scheduled Task
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
+
+        {/* Search bar */}
+        <div className="mb-4">
+          <div className="relative">
+            <Input
+              type="text"
+              placeholder="Search tasks by title or description..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 border-gray-300 focus-visible:ring-indigo-300 focus-visible:border-indigo-300"
+            />
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <svg className="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
+              </svg>
+            </div>
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-500"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+        </div>
+        
         {aiError && (
           <div className="mt-2 text-sm text-red-500 bg-red-50 p-2 rounded-md max-w-3xl">
             {aiError}
           </div>
         )}
       </div>
-
-      {/* Manual concept addition */}
-      {isAddingManually && (
-        <div className="p-5 border-2 border-indigo-200 rounded-lg bg-indigo-50 mb-6 max-w-3xl">
-          <div className="flex justify-between items-center mb-3">
-            <h3 className="text-lg font-medium text-indigo-700">Add New Concept</h3>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => setIsAddingManually(false)}
-              className="text-gray-500"
-            >
-              <X className="h-4 w-4 mr-1" />
-              Cancel
-            </Button>
-          </div>
-          <div className="space-y-3">
-            <div>
-              <label className="text-sm text-gray-600 mb-1 block">Title</label>
+      
+      {/* Show task stats if there are concepts */}
+      {concepts.length > 0 && <TaskStats concepts={concepts} />}
+      
+      {/* Add Concept Dialog - Using shadcn Dialog */}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="sm:max-w-[500px] bg-slate-50">
+          <DialogHeader>
+            <DialogTitle className="text-xl text-indigo-700">Add New Concept</DialogTitle>
+            <DialogDescription>
+              Fill in the details for your new concept or task.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Title</label>
               <Input
                 placeholder="Concept Title"
                 value={newConcept.title}
                 onChange={(e) => setNewConcept({...newConcept, title: e.target.value})}
-                className="w-full border-2 border-indigo-100 focus-visible:ring-indigo-300 focus-visible:border-indigo-300"
+                className="w-full border border-gray-300 focus-visible:ring-indigo-300 focus-visible:border-indigo-300"
               />
             </div>
-            <div>
-              <label className="text-sm text-gray-600 mb-1 block">Description</label>
+            
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Description</label>
               <Input
                 placeholder="Description"
                 value={newConcept.description}
                 onChange={(e) => setNewConcept({...newConcept, description: e.target.value})}
-                className="w-full border-2 border-indigo-100 focus-visible:ring-indigo-300 focus-visible:border-indigo-300"
+                className="w-full border border-gray-300 focus-visible:ring-indigo-300 focus-visible:border-indigo-300"
               />
             </div>
-            <div className="flex justify-end pt-2">
-              <Button 
-                onClick={addConceptManually}
-                disabled={!newConcept.title}
-                className="bg-indigo-600 hover:bg-indigo-700"
-              >
-                Add Concept
-              </Button>
+            
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Due Date (optional)</label>
+              <Input
+                type="date"
+                value={newConcept.dueDate || ''}
+                onChange={(e) => setNewConcept({...newConcept, dueDate: e.target.value})}
+                className="w-full border border-gray-300 focus-visible:ring-indigo-300 focus-visible:border-indigo-300"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Priority</label>
+              <div className="flex space-x-2">
+                <Button 
+                  type="button" 
+                  variant={newConcept.priority === 'low' ? 'default' : 'outline'} 
+                  size="sm"
+                  onClick={() => setNewConcept({...newConcept, priority: 'low'})}
+                  className={newConcept.priority === 'low' ? 'bg-green-500 hover:bg-green-600' : ''}
+                >
+                  Low
+                </Button>
+                <Button 
+                  type="button" 
+                  variant={newConcept.priority === 'medium' ? 'default' : 'outline'} 
+                  size="sm"
+                  onClick={() => setNewConcept({...newConcept, priority: 'medium'})}
+                  className={newConcept.priority === 'medium' ? 'bg-yellow-500 hover:bg-yellow-600' : ''}
+                >
+                  Medium
+                </Button>
+                <Button 
+                  type="button" 
+                  variant={newConcept.priority === 'high' ? 'default' : 'outline'} 
+                  size="sm"
+                  onClick={() => setNewConcept({...newConcept, priority: 'high'})}
+                  className={newConcept.priority === 'high' ? 'bg-red-500 hover:bg-red-600' : ''}
+                >
+                  High
+                </Button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+          
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline">Cancel</Button>
+            </DialogClose>
+            <Button 
+              onClick={addConceptManually}
+              disabled={!newConcept.title}
+              className="bg-indigo-600 hover:bg-indigo-700"
+            >
+              Add Concept
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       
       {/* Concepts section */}
       <div className="space-y-4 flex-1 overflow-y-auto">
         {concepts.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {concepts.map(concept => (
-              <div
-                key={concept.id}
-                className={cn(
-                  "p-4 rounded-lg border-2 hover:border-indigo-300 hover:shadow-md transition-all relative",
-                  concept.completed ? "bg-green-50 border-green-200" : "bg-white border-gray-200"
-                )}
+          filteredConcepts.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredConcepts
+                .map(concept => (
+                  <div
+                    key={concept.id}
+                    className={cn(
+                      "p-4 rounded-lg border-2 hover:border-indigo-300 hover:shadow-md transition-all relative",
+                      concept.completed ? "bg-green-50 border-green-200" : "bg-white border-gray-200"
+                    )}
+                  >
+                    {editingConcept === concept.id ? (
+                      <>
+                        <Input
+                          className="mb-2 font-medium"
+                          value={concept.title}
+                          onChange={(e) => setConcepts(concepts.map(c => 
+                            c.id === concept.id ? { ...c, title: e.target.value } : c
+                          ))}
+                        />
+                        <Input
+                          className="mb-3 text-sm"
+                          value={concept.description}
+                          onChange={(e) => setConcepts(concepts.map(c => 
+                            c.id === concept.id ? { ...c, description: e.target.value } : c
+                          ))}
+                        />
+                        <div className="flex justify-end">
+                          <Button
+                            size="sm"
+                            onClick={() => setEditingConcept(null)}
+                            variant="outline"
+                            className="mr-2"
+                          >
+                            Cancel
+                          </Button>
+                          <Button
+                            size="sm"
+                            onClick={() => saveEditedConcept(concept.id, concept.title, concept.description)}
+                            disabled={!concept.title}
+                          >
+                            <Save className="h-4 w-4 mr-1" />
+                            Save
+                          </Button>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="flex justify-between items-start mb-2">
+                          <h3 
+                            className={cn(
+                              "font-medium text-lg cursor-pointer",
+                              concept.completed ? "text-green-700 line-through" : "text-indigo-600"
+                            )}
+                            onClick={() => handleConceptClick(concept)}
+                          >
+                            {concept.title}
+                          </h3>
+                          <div className="flex space-x-1">
+                            <button
+                              onClick={() => startEditingConcept(concept)}
+                              className="p-1 rounded-full hover:bg-gray-100"
+                            >
+                              <Edit className="h-5 w-5 text-gray-400" />
+                            </button>
+                            <button
+                              onClick={() => toggleConceptComplete(concept.id)}
+                              className="p-1 rounded-full hover:bg-gray-100"
+                            >
+                              {concept.completed ? 
+                                <CheckCircle className="h-5 w-5 text-green-500" /> : 
+                                <Circle className="h-5 w-5 text-gray-400" />
+                              }
+                            </button>
+                            <button
+                              onClick={() => deleteConcept(concept.id)}
+                              className="p-1 rounded-full hover:bg-gray-100"
+                            >
+                              <Trash2 className="h-5 w-5 text-red-400" />
+                            </button>
+                          </div>
+                        </div>
+                        
+                        <p className="text-gray-600 text-sm mb-3 line-clamp-2">
+                          {concept.description}
+                        </p>
+                        
+                        <div className="flex justify-between items-center">
+                          <div className="flex flex-col">
+                            <span className="text-xs text-gray-500">
+                              {concept.resources.length} resources available
+                            </span>
+                            {concept.dueDate && (
+                              <span className="text-xs mt-1 flex items-center">
+                                <Calendar className="h-3 w-3 mr-1 text-blue-500" />
+                                Due: {new Date(concept.dueDate).toLocaleDateString()}
+                              </span>
+                            )}
+                            {concept.priority && (
+                              <span className={`text-xs mt-1 flex items-center ${
+                                concept.priority === 'high' ? 'text-red-500' : 
+                                concept.priority === 'medium' ? 'text-yellow-600' : 'text-green-600'
+                              }`}>
+                                <Star className="h-3 w-3 mr-1" />
+                                {concept.priority.charAt(0).toUpperCase() + concept.priority.slice(1)} priority
+                              </span>
+                            )}
+                          </div>
+                          <button
+                            onClick={() => handleConceptClick(concept)}
+                            className="flex items-center text-xs text-indigo-600 hover:text-indigo-800"
+                          >
+                            <Info className="h-3 w-3 mr-1" />
+                            Learn more
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                ))}
+            </div>
+          ) : (
+            <div className="py-8 text-center text-gray-500">
+              <p>No tasks match your search criteria.</p>
+              <button 
+                onClick={() => {
+                  setSearchQuery('');
+                  setFilterOption('all');
+                }}
+                className="mt-2 text-indigo-500 hover:text-indigo-700 text-sm"
               >
-                {editingConcept === concept.id ? (
-                  <>
-                    <Input
-                      className="mb-2 font-medium"
-                      value={concept.title}
-                      onChange={(e) => setConcepts(concepts.map(c => 
-                        c.id === concept.id ? { ...c, title: e.target.value } : c
-                      ))}
-                    />
-                    <Input
-                      className="mb-3 text-sm"
-                      value={concept.description}
-                      onChange={(e) => setConcepts(concepts.map(c => 
-                        c.id === concept.id ? { ...c, description: e.target.value } : c
-                      ))}
-                    />
-                    <div className="flex justify-end">
-                      <Button
-                        size="sm"
-                        onClick={() => setEditingConcept(null)}
-                        variant="outline"
-                        className="mr-2"
-                      >
-                        Cancel
-                      </Button>
-                      <Button
-                        size="sm"
-                        onClick={() => saveEditedConcept(concept.id, concept.title, concept.description)}
-                        disabled={!concept.title}
-                      >
-                        <Save className="h-4 w-4 mr-1" />
-                        Save
-                      </Button>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="flex justify-between items-start mb-2">
-                      <h3 
-                        className={cn(
-                          "font-medium text-lg cursor-pointer",
-                          concept.completed ? "text-green-700 line-through" : "text-indigo-600"
-                        )}
-                        onClick={() => handleConceptClick(concept)}
-                      >
-                        {concept.title}
-                      </h3>
-                      <div className="flex space-x-1">
-                        <button
-                          onClick={() => startEditingConcept(concept)}
-                          className="p-1 rounded-full hover:bg-gray-100"
-                        >
-                          <Edit className="h-5 w-5 text-gray-400" />
-                        </button>
-                        <button
-                          onClick={() => toggleConceptComplete(concept.id)}
-                          className="p-1 rounded-full hover:bg-gray-100"
-                        >
-                          {concept.completed ? 
-                            <CheckCircle className="h-5 w-5 text-green-500" /> : 
-                            <Circle className="h-5 w-5 text-gray-400" />
-                          }
-                        </button>
-                        <button
-                          onClick={() => deleteConcept(concept.id)}
-                          className="p-1 rounded-full hover:bg-gray-100"
-                        >
-                          <Trash2 className="h-5 w-5 text-red-400" />
-                        </button>
-                      </div>
-                    </div>
-                    
-                    <p className="text-gray-600 text-sm mb-3 line-clamp-2">
-                      {concept.description}
-                    </p>
-                    
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs text-gray-500">
-                        {concept.resources.length} resources available
-                      </span>
-                      <button
-                        onClick={() => handleConceptClick(concept)}
-                        className="flex items-center text-xs text-indigo-600 hover:text-indigo-800"
-                      >
-                        <Info className="h-3 w-3 mr-1" />
-                        Learn more
-                      </button>
-                    </div>
-                  </>
-                )}
-              </div>
-            ))}
-          </div>
+                Clear filters
+              </button>
+            </div>
+          )
         ) : (
           <div className="flex flex-col items-center justify-center py-12 text-gray-500">
             {isLoading ? (
@@ -630,8 +1125,41 @@ export default function Todo() {
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-gray-300 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                 </svg>
-                <p className="mb-2">Enter a topic above to generate learning concepts</p>
-                <p className="text-sm text-gray-400">Example topics: Modern Web Development, Machine Learning Basics, Blockchain Development</p>
+                <p className="mb-4">Enter a topic above to generate learning concepts</p>
+              
+                
+                <div className="text-left border border-gray-200 rounded-lg p-4 bg-white shadow-sm">
+                  <h3 className="font-medium text-indigo-600 mb-2">Quick Start with Sample Tasks</h3>
+                  <div className="space-y-2">
+                    <button 
+                      onClick={() => addSampleConcept('React Fundamentals', 'medium', new Date(Date.now() + 86400000 * 3).toISOString().split('T')[0])}
+                      className="block w-full text-left px-3 py-2 bg-indigo-50 hover:bg-indigo-100 rounded-md text-sm transition-colors"
+                    >
+                      <span className="flex items-center">
+                        <Plus className="h-3 w-3 mr-2 text-indigo-500" />
+                        Add React Fundamentals
+                      </span>
+                    </button>
+                    <button 
+                      onClick={() => addSampleConcept('State Management', 'high')}
+                      className="block w-full text-left px-3 py-2 bg-indigo-50 hover:bg-indigo-100 rounded-md text-sm transition-colors"
+                    >
+                      <span className="flex items-center">
+                        <Plus className="h-3 w-3 mr-2 text-indigo-500" />
+                        Add State Management (High Priority)
+                      </span>
+                    </button>
+                    <button 
+                      onClick={() => addSampleConcept('Next.js', 'low', new Date(Date.now() + 86400000 * 7).toISOString().split('T')[0])}
+                      className="block w-full text-left px-3 py-2 bg-indigo-50 hover:bg-indigo-100 rounded-md text-sm transition-colors"
+                    >
+                      <span className="flex items-center">
+                        <Plus className="h-3 w-3 mr-2 text-indigo-500" />
+                        Add Next.js (Due in a week)
+                      </span>
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
           </div>
@@ -640,24 +1168,24 @@ export default function Todo() {
 
       {/* Floating input at the bottom */}
       <div className="mb-8 fixed bottom-0 max-w-7xl w-full">
-        <div className="flex max-w-2xl mx-auto items-center gap-3 p-2 px-5 bg-gradient-to-r from-violet-500/80 to-indigo-400/80 hover:from-violet-500/90 hover:to-indigo-400/90 backdrop-blur-md rounded-full shadow-lg border border-violet-300/30 transition-all relative">
+        <div className="flex max-w-2xl mx-auto items-center gap-3 p-2 px-5 bg-gradient-to-r from-cyan-500/90 to-purple-500/90 hover:from-cyan-500 hover:to-purple-500 backdrop-blur-md rounded-full shadow-lg border border-cyan-300/30 transition-all relative">
           <div className="relative flex-1">
             <Input 
-              placeholder="What do you want to learn today?"
+              placeholder="What do you want to do today?"
               value={todoText}
               onChange={(e) => setTodoText(e.target.value)}
               onKeyDown={(e) => {
                 if(e.key === 'Enter') generateConcepts();
               }}
               disabled={isLoading}
-              className="flex-1 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 pl-2 text-white placeholder:text-white/80"
+              className="flex-1 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 pl-4 text-white placeholder:text-white/80"
               autoFocus
             />
           </div>
           <Button 
             onClick={generateConcepts} 
             disabled={isLoading || !todoText.trim()}
-            className="rounded-full px-6 h-10 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white border-0 shadow-sm"
+            className="rounded-full px-6 h-10 bg-gradient-to-r from-teal-400 to-cyan-400 hover:from-teal-500 hover:to-cyan-500 text-white border-0 shadow-sm"
           >
             {isLoading ? (
               <>
@@ -668,7 +1196,12 @@ export default function Todo() {
                 Generating...
               </>
             ) : (
-              'Generate Topics'
+              <>
+                <svg className="h-4 w-4 mr-1" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M4.75 13.25L10.25 18.75L19.25 5.75" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                Generate
+              </>
             )}
           </Button>
         </div>
@@ -681,6 +1214,7 @@ export default function Todo() {
         concept={selectedConcept}
         onResourceAdd={addResourceToConcept}
         onResourceDelete={deleteResourceFromConcept}
+        onConceptUpdate={updateConceptDetails}
       />
     </div>
   );

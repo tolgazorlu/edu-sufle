@@ -50,7 +50,7 @@ const defaultData = {
   },
   navMain: [
     {
-      title: "App",
+      title: "Roadmap",
       url: "/app",
       icon: LayoutDashboardIcon,
     },
