@@ -1168,7 +1168,7 @@ export default function Todo() {
 
       {/* Floating input at the bottom */}
       <div className="mb-8 fixed bottom-0 max-w-7xl w-full">
-        <div className="flex max-w-2xl mx-auto items-center gap-3 p-2 px-5 bg-gradient-to-r from-cyan-500/90 to-purple-500/90 hover:from-cyan-500 hover:to-purple-500 backdrop-blur-md rounded-full shadow-lg border border-cyan-300/30 transition-all relative">
+        <div className="flex max-w-2xl mx-auto items-center gap-3 p-2 px-5 bg-gradient-to-r from-violet-500/80 to-indigo-400/80 hover:from-violet-500/90 hover:to-indigo-400/90 backdrop-blur-md rounded-full shadow-lg border border-violet-300/30 transition-all relative">
           <div className="relative flex-1">
             <Input 
               placeholder="What do you want to do today?"
@@ -1185,7 +1185,7 @@ export default function Todo() {
           <Button 
             onClick={generateConcepts} 
             disabled={isLoading || !todoText.trim()}
-            className="rounded-full px-6 h-10 bg-gradient-to-r from-teal-400 to-cyan-400 hover:from-teal-500 hover:to-cyan-500 text-white border-0 shadow-sm"
+            className="rounded-full px-6 h-10 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white border-0 shadow-sm"
           >
             {isLoading ? (
               <>
