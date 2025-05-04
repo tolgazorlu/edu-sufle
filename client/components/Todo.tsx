@@ -442,10 +442,10 @@ export default function Todo() {
   };
 
   return (
-    <div className="container px-4 py-6 mx-auto h-full flex flex-col">
+    <div className="container px-6 py-6 mx-auto h-full flex flex-col">
       <div className="mb-6">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-bold text-indigo-700">Learning Path Todo</h2>
+        <div className="flex justify-end items-center mb-4">
+          {/* <h2 className="text-2xl font-bold text-indigo-700">Learning Path Todo</h2> */}
           <Button 
             variant="outline" 
             onClick={() => setIsAddingManually(true)}
