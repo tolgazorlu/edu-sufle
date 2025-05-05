@@ -9,10 +9,8 @@ export async function POST(request: NextRequest) {
     // Get data from the request
     const requestData = await request.json();
     
-    // Get the Google API key from environment variable or server storage
-    // For demo, we're using a mock method, but in production you'd want to
-    // securely retrieve this from a database or environment variables
-    const apiKey = process.env.GOOGLE_API_KEY || await getApiKeyFromStorage(requestData.userId);
+    // Get the Google API key from multiple possible sources
+    const apiKey = await getApiKeyFromMultipleSources(requestData.userId);
     
     if (!apiKey) {
       return NextResponse.json(
@@ -36,8 +34,23 @@ export async function POST(request: NextRequest) {
     
     if (!response.ok) {
       const errorText = await response.text();
+      let errorDetails = errorText;
+      
+      // Try to parse the error for better debugging
+      try {
+        const errorJson = JSON.parse(errorText);
+        if (errorJson.error && errorJson.error.message) {
+          errorDetails = errorJson.error.message;
+        }
+      } catch (e) {
+        // Use the original error text if parsing fails
+      }
+      
       return NextResponse.json(
-        { error: `Google API request failed: ${response.status} ${response.statusText}`, details: errorText },
+        { 
+          error: `Google API request failed: ${response.status} ${response.statusText}`, 
+          details: errorDetails 
+        },
         { status: response.status }
       );
     }
@@ -55,32 +68,34 @@ export async function POST(request: NextRequest) {
 }
 
 /**
- * Helper function to get API key from storage
- * In a real application, this would fetch from a secure database
+ * Helper function to get API key from multiple potential sources
+ * Prioritizes direct environment variables, then API calls to settings
  */
-async function getApiKeyFromStorage(userId: string): Promise<string | null> {
-  // This is a mock implementation
-  // In production, this would query a database
+async function getApiKeyFromMultipleSources(userId: string): Promise<string | null> {
+  // 1. First check if we have a direct environment variable
+  if (process.env.GOOGLE_API_KEY) {
+    return process.env.GOOGLE_API_KEY;
+  }
   
-  // For demo purposes, we're using the in-memory storage from the settings API
+  // 2. Attempt to fetch from the settings API (in-memory storage)
   try {
-    // Simple approach to access the same in-memory storage
-    // In a real app, this would be a database query
-    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}/api/settings?userId=${userId}`, {
+    // Use a relative URL that works in both development and production
+    // This avoids the localhost issue completely
+    const response = await fetch(`/api/settings?userId=${userId}`, {
       headers: {
-        // Add any internal auth headers if needed
         "x-internal-request": "true"
       }
     });
     
     if (!response.ok) {
+      console.error("Settings API returned error:", response.status, response.statusText);
       return null;
     }
     
     const data = await response.json();
     return data.googleApiKey || null;
   } catch (error) {
-    console.error("Error retrieving API key:", error);
+    console.error("Error retrieving API key from settings API:", error);
     return null;
   }
 } 

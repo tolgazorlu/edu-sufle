@@ -4,6 +4,7 @@ import "./globals.css";
 import OCIDProvider from "../components/OCIDProvider";
 import Providers from "../components/Providers";
 import { Analytics } from "@vercel/analytics/react";
+import Clarity from '@microsoft/clarity';
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -17,6 +18,11 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const clarityApiKey = process.env.CLARITY_API_KEY;
+  if (clarityApiKey) {
+    Clarity.init(clarityApiKey);
+  }
+
   return (
     <html lang="en" className="scroll-smooth">
       <body className={`${inter.className} light `}>

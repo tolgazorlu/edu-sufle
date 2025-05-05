@@ -1,21 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
 import { NextResponse } from "next/server";
 
-// Helper function to safely stringify objects for logging
-function safeStringify(obj: any, maxLength = 500): string {
-  try {
-    const str = JSON.stringify(obj, null, 2);
-    if (str.length <= maxLength) {
-      return str;
-    }
-    return str.substring(0, maxLength / 2) + 
-           "\n...[content truncated]...\n" + 
-           str.substring(str.length - maxLength / 2);
-  } catch (e) {
-    return `[Could not stringify object: ${e}]`;
-  }
-}
-
 export async function POST(request: Request) {
   try {
     const { topic } = await request.json();
@@ -301,25 +286,21 @@ export async function POST(request: Request) {
         return NextResponse.json({ result: todoData });
         
       } catch (e) {
-        console.error("Failed to process todo data:", e);
-        
-        return NextResponse.json({
-          result: generateFallbackData(),
-          error: "Could not create todo list for this topic. Try another topic."
-        });
+          return NextResponse.json({
+            result: generateFallbackData(),
+            error: "Could not create todo list for this topic. Try another topic."
+          });
       }
     } catch (error) {
-      console.error("General error in todo generation:", error);
+        return NextResponse.json(
+          { error: "Failed to process your request. Please try again later." },
+          { status: 500 }
+        );
+    }
+  } catch (error) {
       return NextResponse.json(
         { error: "Failed to process your request. Please try again later." },
         { status: 500 }
       );
-    }
-  } catch (error) {
-    console.error("General error in todo generation:", error);
-    return NextResponse.json(
-      { error: "Failed to process your request. Please try again later." },
-      { status: 500 }
-    );
   }
 } 

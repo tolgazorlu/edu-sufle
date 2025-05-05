@@ -74,14 +74,24 @@ export function GoogleApiSettings() {
       
       if (!response.ok) {
         const errorData = await response.json();
+        console.error("API key test failed:", errorData);
+        
         // Check if the error contains model-specific issues
         if (errorData.details && typeof errorData.details === 'string') {
-          const detailsObj = JSON.parse(errorData.details);
-          if (detailsObj.error && detailsObj.error.message) {
-            if (detailsObj.error.message.includes('is not found') || 
-                detailsObj.error.message.includes('NOT_FOUND')) {
-              throw new Error("Model not found. The API endpoint might need to be updated.");
+          let errorMessage = errorData.details;
+          try {
+            // Try to parse it as JSON if it's a string representation of JSON
+            const detailsObj = JSON.parse(errorData.details);
+            if (detailsObj.error && detailsObj.error.message) {
+              errorMessage = detailsObj.error.message;
+              if (detailsObj.error.message.includes('is not found') || 
+                  detailsObj.error.message.includes('NOT_FOUND')) {
+                throw new Error("Model not found. The API endpoint might need to be updated.");
+              }
             }
+          } catch (e) {
+            // If it's not valid JSON, use the string as is
+            throw new Error(errorMessage);
           }
         }
         throw new Error(errorData.error || 'Failed to test Google AI API');
@@ -116,6 +126,14 @@ export function GoogleApiSettings() {
   const handleSaveApiKey = async () => {
     setIsLoading(true);
     try {
+      // Test the API key before saving
+      const testSuccess = await testApiKey(apiKey);
+      
+      if (!testSuccess) {
+        throw new Error("The API key validation failed. Please check the key and try again.");
+      }
+      
+      // Only save if the test was successful
       // Save to localStorage for offline access
       localStorage.setItem("googleApiKey", apiKey);
       
@@ -129,20 +147,15 @@ export function GoogleApiSettings() {
       if (!response.ok) {
         throw new Error("Failed to save API key to server");
       }
-
-      // Test the API key after saving
-      const testSuccess = await testApiKey(apiKey);
       
       toast({
         title: "API Key Saved",
-        description: testSuccess 
-          ? "Your Google API key has been saved and verified successfully." 
-          : "Your Google API key has been saved, but validation failed.",
+        description: "Your Google API key has been saved and verified successfully.",
       });
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Error",
-        description: "Failed to save API key. Please try again.",
+        description: error.message || "Failed to save API key. Please try again.",
         variant: "destructive",
       });
       console.error("Error saving API key:", error);
