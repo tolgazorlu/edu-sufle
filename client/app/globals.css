@@ -98,3 +98,11 @@
 .animate-fade-in {
   animation: fadeIn 0.5s ease-out forwards;
 }
+
+@font-face {
+  font-family: 'Bandal';
+  src: url('/bandal.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}

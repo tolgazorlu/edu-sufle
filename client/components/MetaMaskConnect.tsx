@@ -318,7 +318,7 @@ export const MetaMaskConnect: React.FC<MetaMaskConnectProps> = ({
   }
 
   return (
-    <Button size="sm" onClick={connectWallet}>
+    <Button size="sm" onClick={connectWallet} className="bg-gray-800 hover:bg-gray-700 bg-opacity-50 backdrop-blur-sm animate-pulse">
       Connect with MetaMask
     </Button>
   );
