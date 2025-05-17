@@ -2,60 +2,8 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl, { Map as MapboxMap } from 'mapbox-gl';
-import { Plus, X } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import {
-  ReactFlow,
-  Background,
-  Controls,
-  applyNodeChanges,
-  applyEdgeChanges,
-  NodeChange,
-  EdgeChange,
-  Node,
-  Edge,
-  Connection,
-  addEdge,
-  Panel
-} from '@xyflow/react';
-import '@xyflow/react/dist/style.css';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Loader2 } from 'lucide-react';
-
 import 'mapbox-gl/dist/mapbox-gl.css';
 import Image from 'next/image';
-
-// GeoJSON tipi
-interface IssGeoJson {
-  type: 'FeatureCollection';
-  features: [
-    {
-      type: 'Feature';
-      geometry: {
-        type: 'Point';
-        coordinates: [number, number];
-      };
-      properties: {};
-    }
-  ];
-}
-
-// Resource type definition (copied from mindmap)
-interface Resource {
-  title: string;
-  description: string;
-  url: string;
-}
-
-// Modal (RightDrawer) component (copied and adapted from mindmap)
-interface RightDrawerProps {
-  open: boolean;
-  onClose: () => void;
-  title: string;
-  description?: string;
-  children: React.ReactNode;
-}
 
 const Map = () => {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
@@ -65,18 +13,6 @@ const Map = () => {
   const markerAnimationRef = useRef<NodeJS.Timeout | null>(null);
   const worldRotateIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const [showWelcome, setShowWelcome] = useState(true);
-  const [showProfilePopup, setShowProfilePopup] = useState(false);
-
-  // Profil bilgileri
-  const profileInfo = {
-    interests: 'Web Development, Blockchain, UI/UX Design, DevOps, Artificial Intelligence',
-    motivations: 'money, Career advancement, Financial independence, Personal growth, Problem-solving',
-    occupation: 'Software Developer',
-    lifeGoal: 'Ben fullstack developer olmak istiyorum, para kazanmak istiyorum.'
-  };
-
-  // Popup referansı
-  const popupRef = useRef<mapboxgl.Popup | null>(null);
 
   useEffect(() => {
     // Kullanıcıdan konum al
@@ -145,49 +81,6 @@ const Map = () => {
         el.style.border = '2px solid #5271ff';
         el.style.cursor = 'pointer';
         el.title = 'Profil Bilgilerini Gör';
-        el.onclick = () => {
-          setShowProfilePopup(true);
-          if (popupRef.current) {
-            popupRef.current.remove();
-          }
-          const popupNode = document.createElement('div');
-          popupNode.innerHTML = `
-            <div style="min-width:380px;max-width:300px;padding:18px 18px 14px 18px;background:#18181b;border-radius:16px;box-shadow:0 2px 24px rgba(0,0,0,0.35);font-size:15px;border:1.5px solid #5271ff;color:#fff;">
-              <div style='font-weight:700;font-size:18px;margin-bottom:10px;color:#5271ff;'>Kullanıcı Profili</div>
-              <div style='margin-bottom:8px;'><b style="color:#fff;">Interests:</b> <span style="color:#e5e7eb;">${profileInfo.interests}</span></div>
-              <div style='margin-bottom:8px;'><b style="color:#fff;">Motivations:</b> <span style="color:#e5e7eb;">${profileInfo.motivations}</span></div>
-              <div style='margin-bottom:8px;'><b style="color:#fff;">Occupation:</b> <span style="color:#e5e7eb;">${profileInfo.occupation}</span></div>
-              <div style='margin-bottom:8px;'><b style="color:#fff;">Life Goal:</b> <span style="color:#e5e7eb;">${profileInfo.lifeGoal}</span></div>
-              <button id='close-profile-popup' style='margin-top:12px;padding:6px 18px;background:#232336;color:#fff;border:1.5px solid #5271ff;border-radius:8px;cursor:pointer;font-weight:500;transition:background 0.2s;'>Kapat</button>
-            </div>
-          `;
-          const popup = new mapboxgl.Popup({ closeOnClick: false, offset: 30 })
-            .setLngLat(userLocation)
-            .setDOMContent(popupNode)
-            .addTo(mapRef.current!);
-          popupRef.current = popup;
-          // Mapbox popup arrow ve arka plan override
-          setTimeout(() => {
-            const popupEl = document.querySelector('.mapboxgl-popup');
-            if (popupEl) {
-              // Ok (tip) ve gölgeyi kaldır
-              const tip = popupEl.querySelector('.mapboxgl-popup-tip');
-              if (tip) (tip as HTMLElement).style.display = 'none';
-              const content = popupEl.querySelector('.mapboxgl-popup-content');
-              if (content) {
-                (content as HTMLElement).style.background = 'transparent';
-                (content as HTMLElement).style.boxShadow = 'none';
-                (content as HTMLElement).style.padding = '0';
-              }
-            }
-            // Kapat butonu event'i
-            const btn = popupNode.querySelector('#close-profile-popup');
-            if (btn) btn.addEventListener('click', () => {
-              popup.remove();
-              setShowProfilePopup(false);
-            });
-          }, 100);
-        };
 
         if (markerRef.current) {
           markerRef.current.remove();
