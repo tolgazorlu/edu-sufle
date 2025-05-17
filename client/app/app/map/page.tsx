@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl, { Map as MapboxMap } from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import Image from 'next/image';
+import { MetaMaskConnect } from '@/components/MetaMaskConnect';
 
 const Map = () => {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
@@ -140,17 +141,18 @@ const Map = () => {
 
   return (
     <>
-      <div ref={mapContainerRef} id="map" style={{ height: '100vh', width: '100%' }} />
+      <div ref={mapContainerRef} id="map" style={{ height: '110vh', width: '100%' }} />
       <div className="fixed top-0 left-0 right-0 p-4 bg-transparent">
-        <a href="/" className="flex items-center gap-2">
+       <div className='flex justify-between items-center'> <a href="/" className="flex items-center gap-2">
           <Image src="/sufle.png" alt="Sufle" width={24} height={24} />
           <span className="text-white font-semibold">Sufle</span>
         </a>
+        <MetaMaskConnect /></div>
         {showWelcome && (
           <div className="flex justify-center mt-16 animate-pulse">
             <span className="text-5xl font-bold text-white text-opacity-20 drop-shadow-lg transition-opacity">Welcome to Sufle</span>
           </div>
-        )}
+        )}      
       </div>
     </>
   );
