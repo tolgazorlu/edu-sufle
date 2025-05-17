@@ -131,22 +131,35 @@ const Map = () => {
   }, [userLocation]);
 
   // Kullanıcı herhangi bir yere tıklarsa: Welcome yazısı kaybolsun, dünya normale dönsün, animasyon dursun
-  useEffect(() => {
-    if (!showWelcome) return;
-    const handleClick = () => {
-      setShowWelcome(false);
-      // Dünya dönme animasyonunu durdur
-      if (worldRotateIntervalRef.current) {
-        clearInterval(worldRotateIntervalRef.current);
-      }
-      // Haritayı normale döndür (pitch:0, bearing:0)
-      if (mapRef.current) {
-        mapRef.current.easeTo({ pitch: 0, bearing: 0, duration: 1500, zoom: 2.2});
-      }
-    };
-    window.addEventListener('click', handleClick);
-    return () => window.removeEventListener('click', handleClick);
-  }, [showWelcome]);
+  // useEffect(() => {
+  //   if (!showWelcome) return;
+  //   const handleClick = () => {
+  //     setShowWelcome(false);
+  //     // Dünya dönme animasyonunu durdur
+  //     if (worldRotateIntervalRef.current) {
+  //       clearInterval(worldRotateIntervalRef.current);
+  //     }
+  //     // Haritayı normale döndür (pitch:0, bearing:0)
+  //     if (mapRef.current) {
+  //       mapRef.current.easeTo({ pitch: 0, bearing: 0, duration: 1500, zoom: 2.2});
+  //     }
+  //   };
+  //   window.addEventListener('click', handleClick);
+  //   return () => window.removeEventListener('click', handleClick);
+  // }, [showWelcome]);
+
+  // Yeni: Sadece butona basınca animasyon dursun ve harita normale dönsün
+  const handleStopWorld = () => {
+    setShowWelcome(false);
+    // Dünya dönme animasyonunu durdur
+    if (worldRotateIntervalRef.current) {
+      clearInterval(worldRotateIntervalRef.current);
+    }
+    // Haritayı normale döndür (pitch:0, bearing:0)
+    if (mapRef.current) {
+      mapRef.current.easeTo({ pitch: 0, bearing: 0, duration: 1500, zoom: 2.2 });
+    }
+  };
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
@@ -206,10 +219,18 @@ const Map = () => {
         />
       </div>
         {showWelcome && (
-          <div className="flex justify-center mt-16">
-            <span className="text-4xl font-bold text-white text-opacity-20 drop-shadow-lg transition-opacity font-bandal">
-              {isWalletConnected ? 'tap anywhere to start' : 'connect wallet to continue'}
+          <div className="flex flex-col items-center w-full">
+            <span className="text-3xl text-gray-300">
+            One World, Many Journeys.
             </span>
+            {isWalletConnected && (
+              <button
+                onClick={handleStopWorld}
+                className="mt-8 px-8 py-3 rounded-md font-bold text-lg shadow-xl transition-all duration-200 bg-gradient-to-br from-green-400 to-teal-400 text-black hover:from-cyan-500 hover:to-teal-500 hover:scale-105 focus:outline-none focus:ring-4 focus:ring-cyan-300/50"
+              >
+                {isWalletConnected ? 'tap to start' : 'connect wallet to continue'}
+              </button>
+            )}
           </div>
         )}      
       </div>
@@ -219,14 +240,13 @@ const Map = () => {
           aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
           pressed={isFullscreen}
           onPressedChange={toggleFullscreen}
-          variant="outline"
           size="lg"
-          className="bg-background border-border shadow-sm rounded-full h-12 w-12 flex items-center justify-center"
+          className="bg-background rounded-lg h-10 w-10 flex items-center justify-center"
         >
           {isFullscreen ? (
-            <Minimize className="h-5 w-5 text-foreground" />
+            <Minimize className="h-4 w-4 text-foreground" />
           ) : (
-            <Maximize className="h-5 w-5 text-foreground" />
+            <Maximize className="h-4 w-4 text-foreground" />
           )}
         </Toggle>
       </div>

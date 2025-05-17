@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Orbitron } from "next/font/google";
 import "./globals.css";
 import OCIDProvider from "../components/OCIDProvider";
 import Providers from "../components/Providers";
@@ -7,6 +7,7 @@ import { Analytics } from "@vercel/analytics/react";
 import Clarity from '@microsoft/clarity';
 
 const inter = Inter({ subsets: ["latin"] });
+const orbitron = Orbitron({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Sufle | Education Partner",
@@ -25,7 +26,7 @@ export default function RootLayout({
 
   return (
     <html lang="en" className="scroll-smooth">
-      <body className={`${inter.className} light `}>
+      <body className={`${inter.className} ${orbitron.className} light `}>
         <Providers>
           <OCIDProvider>{children}</OCIDProvider>
         </Providers>

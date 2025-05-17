@@ -92,6 +92,7 @@ const config = {
   		},
   		fontFamily: {
   			bandal: ['Bandal', 'sans-serif'],
+  			orbitron: ['Orbitron', 'sans-serif'],
   		},
   	}
   },
