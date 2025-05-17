@@ -23,7 +23,6 @@ const Map = () => {
   const [isFullscreen, setIsFullscreen] = React.useState(false);
 
   useEffect(() => {
-    // Kullanıcıdan konum al
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -62,11 +61,9 @@ const Map = () => {
         'high-color': 'teal',
       });
 
-      // 3D dünya efekti için pitch'i artır
-      mapRef.current!.setPitch(60); // 60 derece eğim
+      mapRef.current!.setPitch(60);
       mapRef.current!.setBearing(120);
 
-      // Dünya dönme animasyonu başlat
       if (worldRotateIntervalRef.current) {
         clearInterval(worldRotateIntervalRef.current);
       }
@@ -81,7 +78,6 @@ const Map = () => {
         if (rotateInterval) {
           clearInterval(rotateInterval);
         }
-        // Marker oluştur ve referansa ata
         const el = document.createElement('div');
         el.style.backgroundImage = "url('https://media.licdn.com/dms/image/v2/D4D03AQGQ4zBTR3gFWQ/profile-displayphoto-shrink_800_800/profile-displayphoto-shrink_800_800/0/1702392151111?e=1752710400&v=beta&t=HMcTxPU0567KbSp8MOvFUuTuNTvlxp9Y3249Ty5ynj4')";
         el.style.width = '50px';
@@ -98,22 +94,6 @@ const Map = () => {
         markerRef.current = new mapboxgl.Marker(el)
           .setLngLat(userLocation)
           .addTo(mapRef.current!);
-        // Haritayı kullanıcı konumuna odakla
-        mapRef.current!.flyTo({ center: userLocation, zoom: 1.5 });
-
-        // Marker'ı userLocation etrafında döndür (tur attır) yerine düz hareket ettir
-        let currentLng = userLocation[0];
-        const lat = userLocation[1];
-        const moveStep = 0.0005; // küçük bir adım, hız ayarı
-        if (markerAnimationRef.current) {
-          clearInterval(markerAnimationRef.current);
-        }
-        markerAnimationRef.current = setInterval(() => {
-          if (markerRef.current) {
-            currentLng += moveStep;
-            markerRef.current.setLngLat([currentLng, lat]);
-          }
-        }, 50);
       }
     });
 
@@ -129,33 +109,12 @@ const Map = () => {
       }
     };
   }, [userLocation]);
-
-  // Kullanıcı herhangi bir yere tıklarsa: Welcome yazısı kaybolsun, dünya normale dönsün, animasyon dursun
-  // useEffect(() => {
-  //   if (!showWelcome) return;
-  //   const handleClick = () => {
-  //     setShowWelcome(false);
-  //     // Dünya dönme animasyonunu durdur
-  //     if (worldRotateIntervalRef.current) {
-  //       clearInterval(worldRotateIntervalRef.current);
-  //     }
-  //     // Haritayı normale döndür (pitch:0, bearing:0)
-  //     if (mapRef.current) {
-  //       mapRef.current.easeTo({ pitch: 0, bearing: 0, duration: 1500, zoom: 2.2});
-  //     }
-  //   };
-  //   window.addEventListener('click', handleClick);
-  //   return () => window.removeEventListener('click', handleClick);
-  // }, [showWelcome]);
-
-  // Yeni: Sadece butona basınca animasyon dursun ve harita normale dönsün
+  
   const handleStopWorld = () => {
     setShowWelcome(false);
-    // Dünya dönme animasyonunu durdur
     if (worldRotateIntervalRef.current) {
       clearInterval(worldRotateIntervalRef.current);
     }
-    // Haritayı normale döndür (pitch:0, bearing:0)
     if (mapRef.current) {
       mapRef.current.easeTo({ pitch: 0, bearing: 0, duration: 1500, zoom: 2.2 });
     }
@@ -226,7 +185,7 @@ const Map = () => {
             {isWalletConnected && (
               <button
                 onClick={handleStopWorld}
-                className="mt-8 px-8 py-3 rounded-md font-bold text-lg shadow-xl transition-all duration-200 bg-gradient-to-br from-green-400 to-teal-400 text-black hover:from-cyan-500 hover:to-teal-500 hover:scale-105 focus:outline-none focus:ring-4 focus:ring-cyan-300/50"
+                className="mt-8 px-8 py-3 rounded-md font-bold text-lg shadow-xl transition-all duration-200 bg-gradient-to-br from-cyan-400 to-teal-400 text-black hover:from-cyan-500 hover:to-teal-500 hover:scale-105 focus:outline-none focus:ring-4 focus:ring-cyan-300/50"
               >
                 {isWalletConnected ? 'tap to start' : 'connect wallet to continue'}
               </button>
