@@ -57,40 +57,6 @@ interface RightDrawerProps {
   children: React.ReactNode;
 }
 
-const RightDrawer: React.FC<RightDrawerProps> = ({ open, onClose, title, description, children }) => {
-  return (
-    <>
-      {/* Overlay */}
-      <div
-        className={cn('fixed inset-0 bg-black/40 z-50 transition-opacity', open ? 'opacity-100' : 'opacity-0 pointer-events-none')}
-        onClick={onClose}
-      />
-      {/* Drawer panel */}
-      <div
-        className={cn(
-          'fixed top-0 right-0 h-full w-[400px] max-w-[90vw] bg-white z-50 shadow-xl transform transition-transform duration-300 ease-in-out border-l border-gray-200',
-          open ? 'translate-x-0' : 'translate-x-full'
-        )}
-      >
-        {/* Header */}
-        <div className="px-6 py-4 border-b border-gray-200">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-indigo-700">{title}</h2>
-            <button onClick={onClose} className="rounded-full p-1 hover:bg-gray-100 transition-colors">
-              <X size={18} className="text-gray-500" />
-            </button>
-          </div>
-          {description && <p className="mt-1 text-sm text-gray-500">{description}</p>}
-        </div>
-        {/* Content */}
-        <div className="p-6 overflow-y-auto" style={{ height: 'calc(100% - 70px)' }}>
-          {children}
-        </div>
-      </div>
-    </>
-  );
-};
-
 const Map = () => {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MapboxMap | null>(null);
@@ -99,6 +65,18 @@ const Map = () => {
   const markerAnimationRef = useRef<NodeJS.Timeout | null>(null);
   const worldRotateIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const [showWelcome, setShowWelcome] = useState(true);
+  const [showProfilePopup, setShowProfilePopup] = useState(false);
+
+  // Profil bilgileri
+  const profileInfo = {
+    interests: 'Web Development, Blockchain, UI/UX Design, DevOps, Artificial Intelligence',
+    motivations: 'money, Career advancement, Financial independence, Personal growth, Problem-solving',
+    occupation: 'Software Developer',
+    lifeGoal: 'Ben fullstack developer olmak istiyorum, para kazanmak istiyorum.'
+  };
+
+  // Popup referansı
+  const popupRef = useRef<mapboxgl.Popup | null>(null);
 
   useEffect(() => {
     // Kullanıcıdan konum al
@@ -125,7 +103,7 @@ const Map = () => {
     mapRef.current = new mapboxgl.Map({
       container: mapContainerRef.current,
       style: 'mapbox://styles/mapbox/dark-v11',
-      zoom: 1.5
+      zoom: 4
     });
 
     let rotateInterval: NodeJS.Timeout | null = null;
@@ -149,7 +127,7 @@ const Map = () => {
       worldRotateIntervalRef.current = setInterval(() => {
         if (mapRef.current) {
           const currentBearing = mapRef.current.getBearing();
-          mapRef.current.setBearing(currentBearing + 0.2);
+          mapRef.current.setBearing(currentBearing + 0.02);
         }
       }, 30);
 
@@ -165,6 +143,51 @@ const Map = () => {
         el.style.backgroundSize = 'cover';
         el.style.borderRadius = '50%';
         el.style.border = '2px solid #5271ff';
+        el.style.cursor = 'pointer';
+        el.title = 'Profil Bilgilerini Gör';
+        el.onclick = () => {
+          setShowProfilePopup(true);
+          if (popupRef.current) {
+            popupRef.current.remove();
+          }
+          const popupNode = document.createElement('div');
+          popupNode.innerHTML = `
+            <div style="min-width:380px;max-width:300px;padding:18px 18px 14px 18px;background:#18181b;border-radius:16px;box-shadow:0 2px 24px rgba(0,0,0,0.35);font-size:15px;border:1.5px solid #5271ff;color:#fff;">
+              <div style='font-weight:700;font-size:18px;margin-bottom:10px;color:#5271ff;'>Kullanıcı Profili</div>
+              <div style='margin-bottom:8px;'><b style="color:#fff;">Interests:</b> <span style="color:#e5e7eb;">${profileInfo.interests}</span></div>
+              <div style='margin-bottom:8px;'><b style="color:#fff;">Motivations:</b> <span style="color:#e5e7eb;">${profileInfo.motivations}</span></div>
+              <div style='margin-bottom:8px;'><b style="color:#fff;">Occupation:</b> <span style="color:#e5e7eb;">${profileInfo.occupation}</span></div>
+              <div style='margin-bottom:8px;'><b style="color:#fff;">Life Goal:</b> <span style="color:#e5e7eb;">${profileInfo.lifeGoal}</span></div>
+              <button id='close-profile-popup' style='margin-top:12px;padding:6px 18px;background:#232336;color:#fff;border:1.5px solid #5271ff;border-radius:8px;cursor:pointer;font-weight:500;transition:background 0.2s;'>Kapat</button>
+            </div>
+          `;
+          const popup = new mapboxgl.Popup({ closeOnClick: false, offset: 30 })
+            .setLngLat(userLocation)
+            .setDOMContent(popupNode)
+            .addTo(mapRef.current!);
+          popupRef.current = popup;
+          // Mapbox popup arrow ve arka plan override
+          setTimeout(() => {
+            const popupEl = document.querySelector('.mapboxgl-popup');
+            if (popupEl) {
+              // Ok (tip) ve gölgeyi kaldır
+              const tip = popupEl.querySelector('.mapboxgl-popup-tip');
+              if (tip) (tip as HTMLElement).style.display = 'none';
+              const content = popupEl.querySelector('.mapboxgl-popup-content');
+              if (content) {
+                (content as HTMLElement).style.background = 'transparent';
+                (content as HTMLElement).style.boxShadow = 'none';
+                (content as HTMLElement).style.padding = '0';
+              }
+            }
+            // Kapat butonu event'i
+            const btn = popupNode.querySelector('#close-profile-popup');
+            if (btn) btn.addEventListener('click', () => {
+              popup.remove();
+              setShowProfilePopup(false);
+            });
+          }, 100);
+        };
 
         if (markerRef.current) {
           markerRef.current.remove();
@@ -173,7 +196,7 @@ const Map = () => {
           .setLngLat(userLocation)
           .addTo(mapRef.current!);
         // Haritayı kullanıcı konumuna odakla
-        mapRef.current!.flyTo({ center: userLocation, zoom: 3 });
+        mapRef.current!.flyTo({ center: userLocation, zoom: 1.5 });
 
         // Marker'ı userLocation etrafında döndür (tur attır) yerine düz hareket ettir
         let currentLng = userLocation[0];
@@ -215,7 +238,7 @@ const Map = () => {
       }
       // Haritayı normale döndür (pitch:0, bearing:0)
       if (mapRef.current) {
-        mapRef.current.easeTo({ pitch: 0, bearing: 0, duration: 1500 });
+        mapRef.current.easeTo({ pitch: 0, bearing: 0, duration: 1500, zoom: 1.5 });
       }
     };
     window.addEventListener('click', handleClick);
@@ -226,12 +249,12 @@ const Map = () => {
     <>
       <div ref={mapContainerRef} id="map" style={{ height: '100vh', width: '100%' }} />
       <div className="fixed top-0 left-0 right-0 p-4 bg-transparent">
-      <a href="/" className="flex items-center gap-2">
-            <Image src="/sufle.png" alt="Sufle" width={24} height={24} />
-            <span className="text-white font-semibold">Sufle</span>
-          </a>
+        <a href="/" className="flex items-center gap-2">
+          <Image src="/sufle.png" alt="Sufle" width={24} height={24} />
+          <span className="text-white font-semibold">Sufle</span>
+        </a>
         {showWelcome && (
-          <div className="flex justify-center mt-32 animate-pulse">
+          <div className="flex justify-center mt-16 animate-pulse">
             <span className="text-5xl font-bold text-white text-opacity-20 drop-shadow-lg transition-opacity">Welcome to Sufle</span>
           </div>
         )}
