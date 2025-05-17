@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { getGoogleApiKey, hasGoogleApiKey } from "../utils/google-api";
+import { hasGoogleApiKey } from "../utils/google-api";
 
 interface UseGoogleApiOptions {
   redirectToSettings?: boolean;
